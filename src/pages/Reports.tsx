@@ -8,6 +8,7 @@ import { ReportFilters } from "@/components/ReportFilters";
 import { ReportSummary } from "@/components/ReportSummary";
 import { ReportCharts } from "@/components/ReportCharts";
 import { DashboardStats, Transaction } from "@/types";
+import { DateRange } from "react-day-picker";
 
 // Mock data para demonstração
 const mockTransactions: Transaction[] = [
@@ -73,9 +74,9 @@ export default function Reports() {
   const [transactions] = useState<Transaction[]>(mockTransactions);
   const [stats] = useState<DashboardStats>(mockStats);
   const [reportType, setReportType] = useState<"monthly" | "category" | "comparison">("monthly");
-  const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    endDate: new Date()
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    to: new Date()
   });
 
   const handleFilterChange = (newFilters: any) => {
