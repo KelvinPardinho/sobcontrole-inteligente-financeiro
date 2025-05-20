@@ -91,18 +91,6 @@ export default function Reports() {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold">Relatórios</h1>
-          <Tabs
-            defaultValue="monthly"
-            value={reportType}
-            onValueChange={(value) => setReportType(value as any)}
-            className="w-[400px]"
-          >
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="monthly">Mensal</TabsTrigger>
-              <TabsTrigger value="category">Categorias</TabsTrigger>
-              <TabsTrigger value="comparison">Comparação</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
 
         <div className="grid grid-cols-1 gap-6">
@@ -115,48 +103,61 @@ export default function Reports() {
             </CardContent>
           </Card>
 
-          <TabsContent value="monthly" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-1">
+          <Tabs
+            defaultValue="monthly"
+            value={reportType}
+            onValueChange={(value) => setReportType(value as any)}
+            className="w-full"
+          >
+            <TabsList className="grid w-full max-w-[400px] grid-cols-3 mb-6">
+              <TabsTrigger value="monthly">Mensal</TabsTrigger>
+              <TabsTrigger value="category">Categorias</TabsTrigger>
+              <TabsTrigger value="comparison">Comparação</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="monthly" className="mt-0">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="md:col-span-1">
+                  <CardHeader>
+                    <CardTitle>Resumo do Período</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ReportSummary stats={stats} />
+                  </CardContent>
+                </Card>
+                <Card className="md:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Evolução Mensal</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ReportCharts type="monthly" transactions={transactions} />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="category" className="mt-0">
+              <Card>
                 <CardHeader>
-                  <CardTitle>Resumo do Período</CardTitle>
+                  <CardTitle>Análise por Categoria</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ReportSummary stats={stats} />
+                  <ReportCharts type="category" transactions={transactions} />
                 </CardContent>
               </Card>
-              <Card className="md:col-span-2">
+            </TabsContent>
+
+            <TabsContent value="comparison" className="mt-0">
+              <Card>
                 <CardHeader>
-                  <CardTitle>Evolução Mensal</CardTitle>
+                  <CardTitle>Comparação entre Períodos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ReportCharts type="monthly" transactions={transactions} />
+                  <ReportCharts type="comparison" transactions={transactions} />
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="category" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Análise por Categoria</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ReportCharts type="category" transactions={transactions} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="comparison" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Comparação entre Períodos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ReportCharts type="comparison" transactions={transactions} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       
