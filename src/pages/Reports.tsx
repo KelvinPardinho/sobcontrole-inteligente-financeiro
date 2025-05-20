@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { MainNav } from "@/components/MainNav";
 import { FooterSection } from "@/components/FooterSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -86,8 +85,6 @@ export default function Reports() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <MainNav />
-      
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold">Relatórios</h1>
@@ -160,8 +157,6 @@ export default function Reports() {
           </Tabs>
         </div>
       </main>
-      
-      <FooterSection />
     </div>
   );
 }
