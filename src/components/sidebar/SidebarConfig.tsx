@@ -42,7 +42,7 @@ export const financeItems = [
     icon: <Wallet />,
   },
   {
-    title: "Calendário",
+    title: "Calendário Financeiro",
     path: "/calendar",
     icon: <Calendar />,
   },

@@ -6,6 +6,7 @@ import { Transaction } from "@/types";
 import { CalendarView } from "@/components/CalendarView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { RecentTransactions } from "@/components/RecentTransactions";
 
 // Mock data para demonstração
 const mockTransactions: Transaction[] = [
@@ -73,6 +74,22 @@ const mockTransactions: Transaction[] = [
     date: "2023-07-15", // Próximo mês
     description: "Internet",
     category: "3",
+  },
+  {
+    id: "8",
+    type: "income",
+    amount: 3500.0,
+    date: "2023-07-10", // Próximo mês
+    description: "Salário",
+    category: "7",
+  },
+  {
+    id: "9",
+    type: "income",
+    amount: 1200.0,
+    date: "2023-06-25",
+    description: "Freelance",
+    category: "7",
   }
 ];
 
@@ -81,13 +98,26 @@ export default function Calendar() {
   const [transactions] = useState<Transaction[]>(mockTransactions);
   const [viewMode, setViewMode] = useState<"month" | "week" | "list">("month");
 
+  const getTransactionsForSelectedDate = () => {
+    if (!selectedDate) return [];
+    
+    return transactions.filter(transaction => {
+      const transDate = new Date(transaction.date);
+      return transDate.getDate() === selectedDate.getDate() && 
+             transDate.getMonth() === selectedDate.getMonth() && 
+             transDate.getFullYear() === selectedDate.getFullYear();
+    });
+  };
+
+  const selectedDateTransactions = getTransactionsForSelectedDate();
+
   return (
     <div className="min-h-screen flex flex-col">
       <MainNav />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold">Calendário de Despesas</h1>
+          <h1 className="text-2xl font-bold">Calendário Financeiro</h1>
           <Tabs defaultValue="month" className="w-[400px]" onValueChange={(value) => setViewMode(value as any)}>
             <TabsList>
               <TabsTrigger value="month">Mês</TabsTrigger>
@@ -97,8 +127,8 @@ export default function Calendar() {
           </Tabs>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
-          <Card className="p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="p-4 lg:col-span-2">
             <CalendarView 
               transactions={transactions} 
               selectedDate={selectedDate} 
@@ -106,6 +136,21 @@ export default function Calendar() {
               viewMode={viewMode}
             />
           </Card>
+          
+          {viewMode !== "list" && (
+            <Card className="p-4">
+              <h2 className="text-xl font-bold mb-4">
+                {selectedDate && `Transações de ${selectedDate.getDate()}/${selectedDate.getMonth() + 1}`}
+              </h2>
+              {selectedDateTransactions.length > 0 ? (
+                <RecentTransactions transactions={selectedDateTransactions} />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Sem transações para esta data.
+                </div>
+              )}
+            </Card>
+          )}
         </div>
       </main>
       

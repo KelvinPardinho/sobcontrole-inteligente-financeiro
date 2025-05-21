@@ -5,8 +5,9 @@ import { ptBR } from "date-fns/locale";
 import { Transaction } from "@/types";
 import { formatCurrency } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface CalendarViewProps {
   transactions: Transaction[];
@@ -38,15 +39,17 @@ export function CalendarView({ transactions, selectedDate = new Date(), onDateSe
     });
   };
 
-  const getDayTotal = (date: Date) => {
+  const getDayTransactionsSummary = (date: Date) => {
     const dayTransactions = getTransactionsForDate(date);
-    return dayTransactions.reduce((total, transaction) => {
-      if (transaction.type === "income") {
-        return total + transaction.amount;
-      } else {
-        return total - transaction.amount;
-      }
-    }, 0);
+    const income = dayTransactions
+      .filter(t => t.type === "income")
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const expense = dayTransactions
+      .filter(t => t.type === "expense")
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    return { income, expense, total: income - expense };
   };
 
   const getUpcomingTransactions = () => {
@@ -113,17 +116,17 @@ export function CalendarView({ transactions, selectedDate = new Date(), onDateSe
             
             {calendarDays.map((day) => {
               const dayTransactions = getTransactionsForDate(day);
-              const dayTotal = getDayTotal(day);
+              const { income, expense, total } = getDayTransactionsSummary(day);
               const isToday = isSameDay(day, new Date());
               const isSelected = selectedDate && isSameDay(day, selectedDate);
               
               return (
                 <div
                   key={day.toString()}
-                  className={`p-2 min-h-[100px] border rounded-md ${
-                    isToday ? 'bg-blue-50 border-blue-200' : ''
+                  className={`p-2 min-h-[100px] border rounded-md transition-all hover:shadow-md cursor-pointer ${
+                    isToday ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : ''
                   } ${isSelected ? 'ring-2 ring-sob-blue' : ''} ${
-                    !isSameMonth(day, currentDate) ? 'text-gray-400' : ''
+                    !isSameMonth(day, currentDate) ? 'text-gray-400 dark:text-gray-600' : ''
                   }`}
                   onClick={() => onDateSelect(day)}
                 >
@@ -132,30 +135,48 @@ export function CalendarView({ transactions, selectedDate = new Date(), onDateSe
                       {format(day, 'd')}
                     </span>
                     {dayTransactions.length > 0 && (
-                      <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                        dayTotal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      <Badge className={`text-xs ${
+                        total >= 0 ? 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' 
+                               : 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400'
                       }`}>
-                        {formatCurrency(Math.abs(dayTotal))}
-                      </span>
+                        {formatCurrency(Math.abs(total))}
+                      </Badge>
                     )}
                   </div>
                   
+                  {(income > 0 || expense > 0) && (
+                    <div className="flex flex-col gap-1 mb-2 text-xs">
+                      {income > 0 && (
+                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                          <ArrowUpCircle className="h-3 w-3" />
+                          <span>{formatCurrency(income)}</span>
+                        </div>
+                      )}
+                      {expense > 0 && (
+                        <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
+                          <ArrowDownCircle className="h-3 w-3" />
+                          <span>{formatCurrency(expense)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="space-y-1">
-                    {dayTransactions.slice(0, 3).map((transaction) => (
+                    {dayTransactions.slice(0, 2).map((transaction) => (
                       <div
                         key={transaction.id}
                         className={`text-xs p-1 rounded truncate ${
                           transaction.type === "income"
-                            ? "bg-green-50 text-green-800"
-                            : "bg-red-50 text-red-800"
+                            ? "bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            : "bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400"
                         }`}
                       >
                         {transaction.description}
                       </div>
                     ))}
-                    {dayTransactions.length > 3 && (
+                    {dayTransactions.length > 2 && (
                       <div className="text-xs text-center text-muted-foreground">
-                        +{dayTransactions.length - 3} mais
+                        +{dayTransactions.length - 2} mais
                       </div>
                     )}
                   </div>
@@ -169,22 +190,29 @@ export function CalendarView({ transactions, selectedDate = new Date(), onDateSe
           <h2 className="text-xl font-bold mb-4">Próximas Transações</h2>
           
           {getUpcomingTransactions().map((transaction) => (
-            <Card key={transaction.id}>
+            <Card key={transaction.id} className="overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{transaction.description}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(transaction.date), 'dd/MM/yyyy')}
-                      {transaction.installment && (
-                        <span className="ml-2">
-                          (Parcela {transaction.installment.current}/{transaction.installment.total})
-                        </span>
-                      )}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    {transaction.type === "income" ? (
+                      <ArrowUpCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <ArrowDownCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    )}
+                    <div>
+                      <p className="font-medium">{transaction.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(transaction.date), 'dd/MM/yyyy')}
+                        {transaction.installment && (
+                          <span className="ml-2">
+                            (Parcela {transaction.installment.current}/{transaction.installment.total})
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                   <span className={`font-medium ${
-                    transaction.type === "income" ? "text-green-600" : "text-red-600"
+                    transaction.type === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                   }`}>
                     {transaction.type === "income" ? "+" : "-"}
                     {formatCurrency(transaction.amount)}
