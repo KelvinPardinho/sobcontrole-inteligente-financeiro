@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarRail } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Sidebar";
+import { ThemeProvider } from "@/hooks/useTheme";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -48,31 +49,33 @@ const App = () => {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/pricing" element={<Pricing />} />
-            
-            {/* Protected routes inside sidebar layout */}
-            <Route path="/dashboard" element={<AuthRoute><Dashboard /></AuthRoute>} />
-            <Route path="/transactions" element={<AuthRoute><Transactions /></AuthRoute>} />
-            <Route path="/calendar" element={<AuthRoute><Calendar /></AuthRoute>} />
-            <Route path="/goals" element={<AuthRoute><Goals /></AuthRoute>} />
-            <Route path="/import" element={<AuthRoute><Import /></AuthRoute>} />
-            <Route path="/reports" element={<AuthRoute><Reports /></AuthRoute>} />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider defaultTheme="light">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/pricing" element={<Pricing />} />
+              
+              {/* Protected routes inside sidebar layout */}
+              <Route path="/dashboard" element={<AuthRoute><Dashboard /></AuthRoute>} />
+              <Route path="/transactions" element={<AuthRoute><Transactions /></AuthRoute>} />
+              <Route path="/calendar" element={<AuthRoute><Calendar /></AuthRoute>} />
+              <Route path="/goals" element={<AuthRoute><Goals /></AuthRoute>} />
+              <Route path="/import" element={<AuthRoute><Import /></AuthRoute>} />
+              <Route path="/reports" element={<AuthRoute><Reports /></AuthRoute>} />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

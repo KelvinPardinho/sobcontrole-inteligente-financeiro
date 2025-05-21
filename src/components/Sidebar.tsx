@@ -15,10 +15,9 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  SidebarProvider,
-  SidebarInset,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   Calendar,
   ChevronDown,
@@ -248,7 +247,8 @@ export function AppSidebar() {
             </DrawerContent>
           </Drawer>
 
-          <div className="mt-2">
+          <div className="mt-2 flex flex-col gap-2">
+            <ThemeToggle />
             <Button variant="ghost" className="w-full justify-start" size="sm">
               <HelpCircle className="mr-2 h-4 w-4" />
               Ajuda

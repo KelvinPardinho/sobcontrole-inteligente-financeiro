@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const routes = [
   { name: "Dashboard", path: "/dashboard" },
@@ -66,13 +67,16 @@ export function MainNav() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
+              <ThemeToggle />
+            </NavigationMenuItem>
+            <NavigationMenuItem>
               <NavigationMenuTrigger>Conta</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <div className="grid gap-3 p-4 md:w-[400px]">
                   <div className="grid grid-cols-2 gap-3">
                     <Link
                       to="/profile"
-                      className="flex h-full w-full flex-col justify-between rounded-md bg-white p-6 no-underline outline-none focus:shadow-md"
+                      className="flex h-full w-full flex-col justify-between rounded-md bg-background p-6 no-underline outline-none focus:shadow-md"
                     >
                       <div className="mb-2 text-lg font-medium">Perfil</div>
                       <div className="text-sm text-muted-foreground">
@@ -81,7 +85,7 @@ export function MainNav() {
                     </Link>
                     <Link
                       to="/settings"
-                      className="flex h-full w-full flex-col justify-between rounded-md bg-white p-6 no-underline outline-none focus:shadow-md"
+                      className="flex h-full w-full flex-col justify-between rounded-md bg-background p-6 no-underline outline-none focus:shadow-md"
                     >
                       <div className="mb-2 text-lg font-medium">Configurações</div>
                       <div className="text-sm text-muted-foreground">
@@ -104,7 +108,8 @@ export function MainNav() {
       </div>
 
       {/* Mobile Navigation */}
-      <div className="md:hidden">
+      <div className="md:hidden flex items-center gap-2">
+        <ThemeToggle />
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
