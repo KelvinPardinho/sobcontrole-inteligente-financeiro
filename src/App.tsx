@@ -17,6 +17,8 @@ import Calendar from "./pages/Calendar";
 import Goals from "./pages/Goals";
 import Import from "./pages/Import";
 import Reports from "./pages/Reports";
+import Installments from "./pages/Installments";
+import Accounts from "./pages/Accounts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +66,8 @@ const App = () => {
               {/* Protected routes inside sidebar layout */}
               <Route path="/dashboard" element={<AuthRoute><Dashboard /></AuthRoute>} />
               <Route path="/transactions" element={<AuthRoute><Transactions /></AuthRoute>} />
+              <Route path="/installments" element={<AuthRoute><Installments /></AuthRoute>} />
+              <Route path="/accounts" element={<AuthRoute><Accounts /></AuthRoute>} />
               <Route path="/calendar" element={<AuthRoute><Calendar /></AuthRoute>} />
               <Route path="/goals" element={<AuthRoute><Goals /></AuthRoute>} />
               <Route path="/import" element={<AuthRoute><Import /></AuthRoute>} />

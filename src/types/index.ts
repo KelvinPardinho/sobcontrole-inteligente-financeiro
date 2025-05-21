@@ -1,6 +1,20 @@
 
 export type Plan = 'free' | 'gold' | 'platinum';
 
+export type AccountType = 'checking' | 'savings' | 'credit_card' | 'investment' | 'other';
+
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  lastFourDigits?: string;
+  color?: string;
+  balance?: number;
+  dueDay?: number; // For credit cards
+  closingDay?: number; // For credit cards
+  limit?: number; // For credit cards
+}
+
 export interface Transaction {
   id: string;
   type: 'income' | 'expense';
@@ -8,6 +22,7 @@ export interface Transaction {
   date: string;
   description: string;
   category: string;
+  accountId?: string;
   installment?: {
     current: number;
     total: number;

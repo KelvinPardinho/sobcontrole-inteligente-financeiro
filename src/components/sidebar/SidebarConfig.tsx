@@ -1,5 +1,5 @@
 
-import { Calendar, CreditCard, HelpCircle, Home, MessageSquare, PieChart, Settings, User } from "lucide-react";
+import { Calendar, CreditCard, HelpCircle, Home, MessageSquare, PieChart, Settings, User, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 
 // Dashboard menu items configuration
 export const dashboardItems = [
@@ -30,6 +30,16 @@ export const financeItems = [
         path: "/transactions/new",
       }
     ],
+  },
+  {
+    title: "Parcelas",
+    path: "/installments",
+    icon: <CreditCardIcon />,
+  },
+  {
+    title: "Contas e Cartões",
+    path: "/accounts",
+    icon: <Wallet />,
   },
   {
     title: "Calendário",
