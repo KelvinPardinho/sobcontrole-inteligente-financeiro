@@ -8,6 +8,7 @@ interface CalendarWeekViewProps {
   onDateSelect: (date: Date) => void;
   selectedDate?: Date;
   transactions: Transaction[];
+  onDayDoubleClick?: (date: Date) => void;
 }
 
 export function CalendarWeekView({
@@ -15,7 +16,8 @@ export function CalendarWeekView({
   currentDate,
   onDateSelect,
   selectedDate,
-  transactions
+  transactions,
+  onDayDoubleClick
 }: CalendarWeekViewProps) {
   return (
     <div className="grid grid-cols-7 gap-1">
@@ -33,6 +35,7 @@ export function CalendarWeekView({
           onDateSelect={onDateSelect}
           selectedDate={selectedDate}
           transactions={transactions}
+          onDayDoubleClick={onDayDoubleClick}
         />
       ))}
     </div>

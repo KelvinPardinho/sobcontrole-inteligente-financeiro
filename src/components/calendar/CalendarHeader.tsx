@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-reac
 
 interface CalendarHeaderProps {
   currentDate: Date;
-  viewMode: "month" | "week" | "list";
+  viewMode: "month" | "week" | "list" | "year";
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
@@ -24,7 +24,11 @@ export function CalendarHeader({
       <h2 className="text-xl font-bold">
         {viewMode === "month" 
           ? format(currentDate, 'MMMM yyyy', { locale: ptBR })
-          : `${format(currentDate, 'dd MMM', { locale: ptBR })} - ${format(addDays(currentDate, 6), 'dd MMM', { locale: ptBR })}`
+          : viewMode === "week"
+          ? `${format(currentDate, 'dd MMM', { locale: ptBR })} - ${format(addDays(currentDate, 6), 'dd MMM', { locale: ptBR })}`
+          : viewMode === "year"
+          ? format(currentDate, 'yyyy', { locale: ptBR })
+          : "Próximas Transações"
         }
       </h2>
       <div className="flex gap-2">

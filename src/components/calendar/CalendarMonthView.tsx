@@ -9,6 +9,7 @@ interface CalendarMonthViewProps {
   selectedDate?: Date;
   transactions: Transaction[];
   emptyDaysAtStart: number;
+  onDayDoubleClick?: (date: Date) => void;
 }
 
 export function CalendarMonthView({
@@ -17,7 +18,8 @@ export function CalendarMonthView({
   onDateSelect,
   selectedDate,
   transactions,
-  emptyDaysAtStart
+  emptyDaysAtStart,
+  onDayDoubleClick
 }: CalendarMonthViewProps) {
   return (
     <div className="grid grid-cols-7 gap-1">
@@ -39,6 +41,7 @@ export function CalendarMonthView({
           onDateSelect={onDateSelect}
           selectedDate={selectedDate}
           transactions={transactions}
+          onDayDoubleClick={onDayDoubleClick}
         />
       ))}
     </div>

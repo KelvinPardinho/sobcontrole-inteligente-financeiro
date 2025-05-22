@@ -7,6 +7,7 @@ import { CalendarView } from "@/components/CalendarView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { RecentTransactions } from "@/components/RecentTransactions";
+import { toast } from "@/components/ui/sonner";
 
 // Mock data para demonstração
 const mockTransactions: Transaction[] = [
@@ -95,8 +96,8 @@ const mockTransactions: Transaction[] = [
 
 export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [transactions] = useState<Transaction[]>(mockTransactions);
-  const [viewMode, setViewMode] = useState<"month" | "week" | "list">("month");
+  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const [viewMode, setViewMode] = useState<"month" | "week" | "list" | "year">("month");
 
   const getTransactionsForSelectedDate = () => {
     if (!selectedDate) return [];
@@ -109,6 +110,29 @@ export default function Calendar() {
     });
   };
 
+  const handleAddTransaction = (data: any) => {
+    const newTransaction: Transaction = {
+      id: `${Date.now()}`,
+      type: data.type,
+      amount: data.amount,
+      date: data.date,
+      description: data.description,
+      category: data.category,
+      ...(data.installments > 1 && {
+        installment: {
+          current: 1,
+          total: data.installments,
+        },
+      }),
+    };
+
+    setTransactions([newTransaction, ...transactions]);
+    toast(`${data.type === 'income' ? 'Receita' : 'Despesa'} adicionada com sucesso!`);
+  };
+
+  // Set up the global function for adding transactions from the calendar
+  window.addCalendarTransaction = handleAddTransaction;
+
   const selectedDateTransactions = getTransactionsForSelectedDate();
 
   return (
@@ -118,10 +142,11 @@ export default function Calendar() {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold">Calendário Financeiro</h1>
-          <Tabs defaultValue="month" className="w-[400px]" onValueChange={(value) => setViewMode(value as any)}>
-            <TabsList>
+          <Tabs defaultValue={viewMode} className="w-[400px]" onValueChange={(value) => setViewMode(value as any)}>
+            <TabsList className="grid grid-cols-4">
               <TabsTrigger value="month">Mês</TabsTrigger>
               <TabsTrigger value="week">Semana</TabsTrigger>
+              <TabsTrigger value="year">Ano</TabsTrigger>
               <TabsTrigger value="list">Lista</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -147,6 +172,9 @@ export default function Calendar() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   Sem transações para esta data.
+                  <p className="mt-2 text-sm">
+                    Dica: Dê um clique duplo em um dia no calendário para adicionar uma transação.
+                  </p>
                 </div>
               )}
             </Card>

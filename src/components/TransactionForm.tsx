@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 interface TransactionFormProps {
   onSubmit: (data: any) => void;
+  initialDate?: string;
 }
 
 const categories = [
@@ -37,7 +37,7 @@ const categories = [
   { id: "8", name: "Investimentos", color: "#6366F1" },
 ];
 
-export function TransactionForm({ onSubmit }: TransactionFormProps) {
+export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps) {
   const [type, setType] = useState<"income" | "expense">("expense");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -45,6 +45,13 @@ export function TransactionForm({ onSubmit }: TransactionFormProps) {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [installments, setInstallments] = useState("1");
   const [showInstallments, setShowInstallments] = useState(false);
+
+  // Set the initial date if provided
+  useEffect(() => {
+    if (initialDate) {
+      setDate(initialDate);
+    }
+  }, [initialDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

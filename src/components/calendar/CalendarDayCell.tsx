@@ -12,6 +12,7 @@ interface CalendarDayCellProps {
   onDateSelect: (date: Date) => void;
   selectedDate?: Date;
   transactions: Transaction[];
+  onDayDoubleClick?: (date: Date) => void;
 }
 
 export function CalendarDayCell({ 
@@ -19,12 +20,23 @@ export function CalendarDayCell({
   currentDate, 
   onDateSelect, 
   selectedDate, 
-  transactions 
+  transactions,
+  onDayDoubleClick
 }: CalendarDayCellProps) {
   const dayTransactions = getTransactionsForDate(transactions, day);
   const { income, expense, total } = getDayTransactionsSummary(transactions, day);
   const isToday = isSameDay(day, new Date());
   const isSelected = selectedDate && isSameDay(day, selectedDate);
+  
+  const handleClick = () => {
+    onDateSelect(day);
+  };
+  
+  const handleDoubleClick = () => {
+    if (onDayDoubleClick) {
+      onDayDoubleClick(day);
+    }
+  };
   
   return (
     <div
@@ -33,7 +45,9 @@ export function CalendarDayCell({
       } ${isSelected ? 'ring-2 ring-sob-blue' : ''} ${
         !isSameMonth(day, currentDate) ? 'text-gray-400 dark:text-gray-600' : ''
       }`}
-      onClick={() => onDateSelect(day)}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
+      title="Clique duplo para adicionar transação"
     >
       <div className="flex justify-between items-center mb-2">
         <span className={`text-sm font-medium ${isToday ? 'bg-sob-blue text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}`}>
