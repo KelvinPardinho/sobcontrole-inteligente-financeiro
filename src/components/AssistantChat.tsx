@@ -9,7 +9,7 @@ export function AssistantChat() {
     { text: "Como posso ajudar você hoje com suas finanças?", sender: "assistant" },
     { text: "Como economizar dinheiro este mês?", sender: "user" },
     { 
-      text: "Você pode economizar dinheiro este mês de várias formas:\n\n1. Analise seus gastos recentes para identificar despesas desnecessárias\n2. Estabeleça um limite de gastos para categorias não essenciais\n3. Compare seus gastos com o mês anterior\n4. Defina uma meta de economia na seção "Metas"", 
+      text: "Você pode economizar dinheiro este mês de várias formas:\n\n1. Analise seus gastos recentes para identificar despesas desnecessárias\n2. Estabeleça um limite de gastos para categorias não essenciais\n3. Compare seus gastos com o mês anterior\n4. Defina uma meta de economia na seção \"Metas\"", 
       sender: "assistant" 
     }
   ]);
