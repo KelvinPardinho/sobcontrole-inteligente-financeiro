@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarRail } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Sidebar";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { AssistantChat } from "@/components/AssistantChat";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -19,6 +20,7 @@ import Import from "./pages/Import";
 import Reports from "./pages/Reports";
 import Installments from "./pages/Installments";
 import Accounts from "./pages/Accounts";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
         <AppSidebar />
         <SidebarRail />
         <SidebarInset>{children}</SidebarInset>
+        <AssistantChat />
       </div>
     </SidebarProvider>
   );
@@ -72,6 +75,7 @@ const App = () => {
               <Route path="/goals" element={<AuthRoute><Goals /></AuthRoute>} />
               <Route path="/import" element={<AuthRoute><Import /></AuthRoute>} />
               <Route path="/reports" element={<AuthRoute><Reports /></AuthRoute>} />
+              <Route path="/profile" element={<AuthRoute><Profile /></AuthRoute>} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

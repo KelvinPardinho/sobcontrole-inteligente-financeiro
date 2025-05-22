@@ -3,11 +3,9 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
@@ -42,8 +40,8 @@ export function MainNav() {
         </Link>
       </div>
 
-      {/* Desktop Navigation */}
-      <div className="hidden md:flex md:items-center md:space-x-4">
+      {/* Desktop Navigation - Centered */}
+      <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2">
         <NavigationMenu>
           <NavigationMenuList>
             {routes.map((route) => (
@@ -63,48 +61,11 @@ export function MainNav() {
             ))}
           </NavigationMenuList>
         </NavigationMenu>
+      </div>
 
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <ThemeToggle />
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Conta</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <div className="grid gap-3 p-4 md:w-[400px]">
-                  <div className="grid grid-cols-2 gap-3">
-                    <Link
-                      to="/profile"
-                      className="flex h-full w-full flex-col justify-between rounded-md bg-background p-6 no-underline outline-none focus:shadow-md"
-                    >
-                      <div className="mb-2 text-lg font-medium">Perfil</div>
-                      <div className="text-sm text-muted-foreground">
-                        Gerencie suas informações pessoais
-                      </div>
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="flex h-full w-full flex-col justify-between rounded-md bg-background p-6 no-underline outline-none focus:shadow-md"
-                    >
-                      <div className="mb-2 text-lg font-medium">Configurações</div>
-                      <div className="text-sm text-muted-foreground">
-                        Prefêrencias e configurações
-                      </div>
-                    </Link>
-                  </div>
-                  <div>
-                    <Link to="/logout">
-                      <Button variant="outline" className="w-full">
-                        Sair
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+      {/* Right section - theme toggle only */}
+      <div className="hidden md:flex">
+        <ThemeToggle />
       </div>
 
       {/* Mobile Navigation */}
@@ -133,28 +94,6 @@ export function MainNav() {
                   {route.name}
                 </Link>
               ))}
-              <div className="h-px bg-border my-4" />
-              <Link
-                to="/profile"
-                className="text-lg font-medium transition-colors hover:text-sob-blue"
-                onClick={() => setIsOpen(false)}
-              >
-                Perfil
-              </Link>
-              <Link
-                to="/settings"
-                className="text-lg font-medium transition-colors hover:text-sob-blue"
-                onClick={() => setIsOpen(false)}
-              >
-                Configurações
-              </Link>
-              <Link
-                to="/logout"
-                className="text-lg font-medium transition-colors hover:text-sob-blue"
-                onClick={() => setIsOpen(false)}
-              >
-                Sair
-              </Link>
             </nav>
           </SheetContent>
         </Sheet>

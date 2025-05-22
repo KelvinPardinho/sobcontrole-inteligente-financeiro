@@ -1,5 +1,5 @@
 
-import { Calendar, CreditCard, HelpCircle, Home, MessageSquare, PieChart, Settings, User, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
+import { Calendar, CreditCard, Home, PieChart, Settings, User, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 
 // Dashboard menu items configuration
 export const dashboardItems = [
@@ -16,20 +16,6 @@ export const financeItems = [
     title: "Transações",
     path: "/transactions",
     icon: <CreditCard />,
-    subItems: [
-      {
-        title: "Receitas",
-        path: "/transactions?type=income",
-      },
-      {
-        title: "Despesas",
-        path: "/transactions?type=expense",
-      },
-      {
-        title: "Nova Transação",
-        path: "/transactions/new",
-      }
-    ],
   },
   {
     title: "Parcelas",
@@ -50,20 +36,6 @@ export const financeItems = [
     title: "Relatórios",
     path: "/reports",
     icon: <PieChart />,
-    subItems: [
-      {
-        title: "Mensal",
-        path: "/reports?type=monthly",
-      },
-      {
-        title: "Categorias",
-        path: "/reports?type=category",
-      },
-      {
-        title: "Comparação",
-        path: "/reports?type=comparison",
-      }
-    ],
   },
   {
     title: "Metas",
