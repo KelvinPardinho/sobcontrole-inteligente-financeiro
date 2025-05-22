@@ -19,19 +19,19 @@ export function AssistantChat() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 rounded-full w-12 h-12 p-0 bg-sob-blue hover:bg-sob-blue/90 shadow-md"
+        className="fixed bottom-4 right-4 rounded-full w-14 h-14 p-0 bg-sob-blue hover:bg-sob-blue/90 shadow-md"
       >
-        <MessageSquare className="h-6 w-6" />
+        <MessageSquare className="h-7 w-7" />
       </Button>
     );
   }
 
   return (
-    <div className="fixed bottom-4 right-4 w-80 bg-background border rounded-lg shadow-lg overflow-hidden flex flex-col z-50">
+    <div className="fixed bottom-4 right-4 w-96 bg-background border rounded-lg shadow-lg overflow-hidden flex flex-col z-50">
       <div className="flex items-center justify-between p-3 border-b">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <h3 className="font-medium">Higor Machado</h3>
+          <h3 className="font-medium">Assistente Financeiro</h3>
         </div>
         <div className="flex items-center">
           <Button
@@ -45,7 +45,7 @@ export function AssistantChat() {
         </div>
       </div>
 
-      <div className="p-3 flex-1 overflow-y-auto max-h-72 space-y-3">
+      <div className="p-3 flex-1 overflow-y-auto max-h-80 space-y-3">
         {messages.map((message, index) => (
           <div 
             key={index}
@@ -67,16 +67,16 @@ export function AssistantChat() {
         ))}
       </div>
 
-      <div className="p-2 border-t">
+      <div className="p-3 border-t">
         <div className="flex gap-2">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-sob-blue"
+            className="flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-sob-blue"
             placeholder="Digite sua mensagem..."
           />
-          <Button size="sm" className="px-2 py-1">
+          <Button size="sm" className="px-3 py-2">
             <MessageSquare className="h-4 w-4" />
           </Button>
         </div>

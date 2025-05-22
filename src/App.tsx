@@ -21,6 +21,7 @@ import Reports from "./pages/Reports";
 import Installments from "./pages/Installments";
 import Accounts from "./pages/Accounts";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,6 +77,7 @@ const App = () => {
               <Route path="/import" element={<AuthRoute><Import /></AuthRoute>} />
               <Route path="/reports" element={<AuthRoute><Reports /></AuthRoute>} />
               <Route path="/profile" element={<AuthRoute><Profile /></AuthRoute>} />
+              <Route path="/settings" element={<AuthRoute><Settings /></AuthRoute>} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
@@ -85,6 +87,6 @@ const App = () => {
       </QueryClientProvider>
     </ThemeProvider>
   );
-};
+}
 
 export default App;
