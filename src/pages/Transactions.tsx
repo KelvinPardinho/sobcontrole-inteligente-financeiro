@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MainNav } from "@/components/MainNav";
 import { FooterSection } from "@/components/FooterSection";
@@ -50,7 +49,7 @@ export default function Transactions() {
         // Formatar transações para o componente
         const formattedTransactions: Transaction[] = transactionsData.map(transaction => ({
           id: transaction.id,
-          type: transaction.type,
+          type: transaction.type as 'income' | 'expense',
           amount: Number(transaction.amount),
           date: transaction.date,
           description: transaction.description,
@@ -104,7 +103,7 @@ export default function Transactions() {
       if (insertedData && insertedData.length > 0) {
         const newTransaction: Transaction = {
           id: insertedData[0].id,
-          type: insertedData[0].type,
+          type: insertedData[0].type as 'income' | 'expense',
           amount: Number(insertedData[0].amount),
           date: insertedData[0].date,
           description: insertedData[0].description,
