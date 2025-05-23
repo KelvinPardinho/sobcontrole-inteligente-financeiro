@@ -1,10 +1,12 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
 import AuthLayout from "@/layouts/AuthLayout";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -12,6 +14,8 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,13 +28,13 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // Simulação de registro
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success("Conta criada com sucesso!");
-      window.location.href = "/dashboard";
+      await register(email, password, name);
+      // Note: depending on your email confirmation settings in Supabase,
+      // you might want to show a different message or redirect to a confirmation page
+      navigate("/login");
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao criar conta. Tente novamente.");
+      // Error is already handled in useAuth
     } finally {
       setIsLoading(false);
     }

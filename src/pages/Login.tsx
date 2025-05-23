@@ -6,29 +6,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
 import AuthLayout from "@/layouts/AuthLayout";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Simulação de login
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Set authentication state
-      localStorage.setItem('isAuthenticated', 'true');
-      
-      toast.success("Login realizado com sucesso!");
+      await login(email, password);
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao fazer login. Verifique seus dados e tente novamente.");
+      // Error is already handled in useAuth
     } finally {
       setIsLoading(false);
     }

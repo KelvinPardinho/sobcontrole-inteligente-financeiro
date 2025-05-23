@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarInset, SidebarRail } from "@/components/ui/side
 import { AppSidebar } from "@/components/Sidebar";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AssistantChat } from "@/components/AssistantChat";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -39,51 +40,53 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="flex items-center justify-center w-full h-screen">Carregando...</div>;
+  }
+  
+  return isAuthenticated ? (
+    <MainLayout>{children}</MainLayout>
+  ) : (
+    <Navigate to="/login" />
+  );
+};
+
 const App = () => {
-  // Simple auth check - in a real app you would use a proper auth context
-  const isAuthenticated = () => {
-    // For demo purposes, consider the user authenticated if they're not on the login/register/index pages
-    return localStorage.getItem('isAuthenticated') === 'true';
-  };
-
-  const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-    return isAuthenticated() ? (
-      <MainLayout>{children}</MainLayout>
-    ) : (
-      <Navigate to="/login" />
-    );
-  };
-
   return (
     <ThemeProvider defaultTheme="light">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/pricing" element={<Pricing />} />
-              
-              {/* Protected routes inside sidebar layout */}
-              <Route path="/dashboard" element={<AuthRoute><Dashboard /></AuthRoute>} />
-              <Route path="/transactions" element={<AuthRoute><Transactions /></AuthRoute>} />
-              <Route path="/installments" element={<AuthRoute><Installments /></AuthRoute>} />
-              <Route path="/accounts" element={<AuthRoute><Accounts /></AuthRoute>} />
-              <Route path="/calendar" element={<AuthRoute><Calendar /></AuthRoute>} />
-              <Route path="/goals" element={<AuthRoute><Goals /></AuthRoute>} />
-              <Route path="/import" element={<AuthRoute><Import /></AuthRoute>} />
-              <Route path="/reports" element={<AuthRoute><Reports /></AuthRoute>} />
-              <Route path="/profile" element={<AuthRoute><Profile /></AuthRoute>} />
-              <Route path="/settings" element={<AuthRoute><Settings /></AuthRoute>} />
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/pricing" element={<Pricing />} />
+                
+                {/* Protected routes inside sidebar layout */}
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+                <Route path="/installments" element={<ProtectedRoute><Installments /></ProtectedRoute>} />
+                <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+                <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+                <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+                <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
+                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

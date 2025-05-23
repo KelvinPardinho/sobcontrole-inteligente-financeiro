@@ -9,7 +9,239 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          balance: number | null
+          closing_day: number | null
+          color: string | null
+          created_at: string
+          credit_limit: number | null
+          due_day: number | null
+          id: string
+          last_four_digits: string | null
+          name: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          closing_day?: number | null
+          color?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          due_day?: number | null
+          id?: string
+          last_four_digits?: string | null
+          name: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          closing_day?: number | null
+          color?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          due_day?: number | null
+          id?: string
+          last_four_digits?: string | null
+          name?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          budget: number | null
+          color: string
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          color: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      default_categories: {
+        Row: {
+          color: string
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          color: string
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          budget_limit: number
+          category_id: string | null
+          created_at: string
+          id: string
+          name: string
+          notify_at: number | null
+          period: string
+          spent: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_limit: number
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notify_at?: number | null
+          period: string
+          spent?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_limit?: number
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notify_at?: number | null
+          period?: string
+          spent?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          plan: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          name?: string | null
+          plan?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          plan?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string | null
+          created_at: string
+          date: string
+          description: string
+          id: string
+          installment_current: number | null
+          installment_total: number | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          date: string
+          description: string
+          id?: string
+          installment_current?: number | null
+          installment_total?: number | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          installment_current?: number | null
+          installment_total?: number | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
