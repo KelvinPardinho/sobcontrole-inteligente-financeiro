@@ -14,6 +14,7 @@ import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -21,14 +22,18 @@ interface RecentTransactionsProps {
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   const [categoriesMap, setCategoriesMap] = useState<Record<string, { name: string, color: string }>>({});
+  const { session } = useAuth();
   
   // Buscar categorias do usuário
   useEffect(() => {
     const fetchCategories = async () => {
+      if (!session?.user) return;
+      
       try {
         const { data, error } = await supabase
           .from('categories')
-          .select('id, name, color');
+          .select('id, name, color')
+          .eq('user_id', session.user.id);
         
         if (error) throw error;
         
@@ -48,7 +53,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
     };
     
     fetchCategories();
-  }, []);
+  }, [session]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

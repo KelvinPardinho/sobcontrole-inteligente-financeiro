@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MainNav } from "@/components/MainNav";
 import { FooterSection } from "@/components/FooterSection";
@@ -39,6 +40,7 @@ export default function Transactions() {
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
         .select('*')
+        .eq('user_id', session?.user.id)
         .order('date', { ascending: false });
 
       if (transactionsError) {
@@ -91,6 +93,8 @@ export default function Transactions() {
         installment_current: data.installments > 1 ? 1 : null,
       };
 
+      console.log("Enviando transação para o banco:", newTransactionData);
+
       // Inserir no banco de dados
       const { data: insertedData, error } = await supabase
         .from('transactions')
@@ -118,6 +122,7 @@ export default function Transactions() {
 
         setTransactions([newTransaction, ...transactions]);
         toast.success("Transação adicionada com sucesso!");
+        fetchTransactions(); // Recarregar transações após adicionar nova
       }
     } catch (error: any) {
       toast.error(`Erro ao adicionar transação: ${error.message}`);

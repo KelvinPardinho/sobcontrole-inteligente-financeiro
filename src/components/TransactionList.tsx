@@ -5,6 +5,7 @@ import { Transaction } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -12,14 +13,18 @@ interface TransactionListProps {
 
 export function TransactionList({ transactions }: TransactionListProps) {
   const [categoriesMap, setCategoriesMap] = useState<Record<string, { name: string, color: string }>>({});
+  const { session } = useAuth();
   
   // Buscar categorias do usuário
   useEffect(() => {
     const fetchCategories = async () => {
+      if (!session?.user) return;
+      
       try {
         const { data, error } = await supabase
           .from('categories')
-          .select('id, name, color');
+          .select('id, name, color')
+          .eq('user_id', session.user.id);
         
         if (error) throw error;
         
@@ -39,7 +44,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
     };
     
     fetchCategories();
-  }, []);
+  }, [session]);
 
   const getCategoryName = (categoryId: string): string => {
     return categoriesMap[categoryId]?.name || "Outros";

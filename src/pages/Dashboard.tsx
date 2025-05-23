@@ -25,13 +25,36 @@ export default function Dashboard() {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { session } = useAuth();
+  const [categoriesMap, setCategoriesMap] = useState<Record<string, string>>({});
 
-  // Buscar transações do usuário
+  // Fetch transactions when user session is available
   useEffect(() => {
     if (session?.user) {
+      fetchCategories();
       fetchTransactions();
     }
   }, [session]);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('user_id', session?.user.id);
+      
+      if (error) throw error;
+      
+      if (data) {
+        const categoryMapping: Record<string, string> = {};
+        data.forEach(category => {
+          categoryMapping[category.id] = category.name;
+        });
+        setCategoriesMap(categoryMapping);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar categorias:", error);
+    }
+  };
 
   const fetchTransactions = async () => {
     try {
@@ -41,6 +64,7 @@ export default function Dashboard() {
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
         .select('*')
+        .eq('user_id', session?.user.id)
         .order('date', { ascending: false });
 
       if (transactionsError) {
@@ -51,28 +75,23 @@ export default function Dashboard() {
       let incomeTotal = 0;
       let expenseTotal = 0;
       const categorySummary: Record<string, number> = {};
-      const upcomingExpenses = calculateUpcomingExpenses(transactionsData || []);
-
+      
       if (transactionsData) {
+        // Process transactions for statistics
         transactionsData.forEach(transaction => {
           if (transaction.type === 'income') {
             incomeTotal += Number(transaction.amount);
           } else {
             expenseTotal += Number(transaction.amount);
             
-            // Buscar nome da categoria
             const categoryName = getCategoryName(transaction.category_id);
             if (categoryName) {
-              if (categorySummary[categoryName]) {
-                categorySummary[categoryName] += Number(transaction.amount);
-              } else {
-                categorySummary[categoryName] = Number(transaction.amount);
-              }
+              categorySummary[categoryName] = (categorySummary[categoryName] || 0) + Number(transaction.amount);
             }
           }
         });
 
-        // Formatar transações para o componente
+        // Format transactions for component state
         const formattedTransactions: Transaction[] = transactionsData.map(transaction => ({
           id: transaction.id,
           type: transaction.type as 'income' | 'expense',
@@ -88,13 +107,14 @@ export default function Dashboard() {
           }),
         }));
 
+        // Update state with transactions and calculated stats
         setTransactions(formattedTransactions);
         setStats({
           balance: incomeTotal - expenseTotal,
           incomeTotal,
           expenseTotal,
           categorySummary,
-          upcomingExpenses,
+          upcomingExpenses: calculateUpcomingExpenses(transactionsData),
         });
       }
     } catch (error: any) {
@@ -106,8 +126,6 @@ export default function Dashboard() {
   };
 
   const calculateUpcomingExpenses = (transactions: any[]): number => {
-    // Considera despesas recorrentes e parcelas futuras
-    // Por enquanto retornamos um valor simples
     const currentDate = new Date();
     const nextMonth = new Date();
     nextMonth.setMonth(currentDate.getMonth() + 1);
@@ -118,20 +136,7 @@ export default function Dashboard() {
   };
 
   const getCategoryName = (categoryId: string): string => {
-    // Em uma implementação completa, buscaríamos da tabela de categorias
-    // Por enquanto usamos um mapeamento simples
-    const categories: Record<string, string> = {
-      "1": "Alimentação",
-      "2": "Transporte",
-      "3": "Moradia",
-      "4": "Educação",
-      "5": "Lazer",
-      "6": "Saúde",
-      "7": "Salário",
-      "8": "Investimentos",
-    };
-    
-    return categories[categoryId] || "Outros";
+    return categoriesMap[categoryId] || "Outros";
   };
 
   const handleAddTransaction = async (data: any) => {
@@ -153,6 +158,8 @@ export default function Dashboard() {
         installment_current: data.installments > 1 ? 1 : null,
       };
 
+      console.log("Enviando transação para o banco:", newTransactionData);
+
       // Inserir no banco de dados
       const { data: insertedData, error } = await supabase
         .from('transactions')
@@ -161,7 +168,7 @@ export default function Dashboard() {
 
       if (error) throw error;
 
-      // Formatar transação para o estado
+      // Update UI with new transaction
       if (insertedData && insertedData.length > 0) {
         const newTransaction: Transaction = {
           id: insertedData[0].id,
@@ -178,27 +185,8 @@ export default function Dashboard() {
           }),
         };
 
-        // Atualizar estado
-        setTransactions([newTransaction, ...transactions]);
-        
-        // Atualizar estatísticas
-        const updatedStats = { ...stats };
-        
-        if (data.type === 'income') {
-          updatedStats.incomeTotal += data.amount;
-          updatedStats.balance += data.amount;
-        } else {
-          updatedStats.expenseTotal += data.amount;
-          updatedStats.balance -= data.amount;
-          
-          // Atualizar resumo de categorias
-          const categoryName = getCategoryName(data.category);
-          if (categoryName) {
-            updatedStats.categorySummary[categoryName] = (updatedStats.categorySummary[categoryName] || 0) + data.amount;
-          }
-        }
-        
-        setStats(updatedStats);
+        // After successful insert, refresh all transaction data
+        fetchTransactions();
         toast.success("Transação adicionada com sucesso!");
       }
     } catch (error: any) {
