@@ -12,60 +12,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useCategories } from "@/hooks/useCategories";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
 }
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
-  const [categoriesMap, setCategoriesMap] = useState<Record<string, { name: string, color: string }>>({});
-  const { session } = useAuth();
-  
-  // Buscar categorias do usuário
-  useEffect(() => {
-    const fetchCategories = async () => {
-      if (!session?.user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('id, name, color')
-          .eq('user_id', session.user.id);
-        
-        if (error) throw error;
-        
-        if (data) {
-          const newCategoriesMap: Record<string, { name: string, color: string }> = {};
-          data.forEach(category => {
-            newCategoriesMap[category.id] = {
-              name: category.name,
-              color: category.color
-            };
-          });
-          setCategoriesMap(newCategoriesMap);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar categorias:", error);
-      }
-    };
-    
-    fetchCategories();
-  }, [session]);
+  const { getCategoryName, getCategoryColor } = useCategories();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("pt-BR").format(date);
-  };
-
-  const getCategoryColor = (categoryId: string) => {
-    return categoriesMap[categoryId]?.color || "#8E9196";
-  };
-
-  const getCategoryName = (categoryId: string) => {
-    return categoriesMap[categoryId]?.name || "Outros";
   };
 
   return (

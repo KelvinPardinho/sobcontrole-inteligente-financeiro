@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,67 +22,78 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 
 interface TransactionFormProps {
   onSubmit: (data: any) => void;
   initialDate?: string;
 }
 
-const categories = [
-  { id: "1", name: "Alimentação", color: "#FF6B6B" },
-  { id: "2", name: "Transporte", color: "#4ECDC4" },
-  { id: "3", name: "Moradia", color: "#45B7D1" },
-  { id: "4", name: "Educação", color: "#A367DC" },
-  { id: "5", name: "Lazer", color: "#FFA500" },
-  { id: "6", name: "Saúde", color: "#38E54D" },
-  { id: "7", name: "Salário", color: "#00A76F" },
-  { id: "8", name: "Investimentos", color: "#6366F1" },
-];
+interface TransactionFormValues {
+  type: "income" | "expense";
+  amount: string;
+  description: string;
+  category: string;
+  date: string;
+  installments: string;
+  isInstallment: boolean;
+}
 
 export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps) {
-  const [type, setType] = useState<"income" | "expense">("expense");
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [installments, setInstallments] = useState("1");
-  const [showInstallments, setShowInstallments] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string; color: string }[]>([]);
+  const { session } = useAuth();
+  
+  const form = useForm<TransactionFormValues>({
+    defaultValues: {
+      type: "expense",
+      amount: "",
+      description: "",
+      category: "",
+      date: initialDate || new Date().toISOString().split("T")[0],
+      installments: "1",
+      isInstallment: false
+    }
+  });
+  
+  const { watch, setValue, register, handleSubmit, formState: { errors } } = form;
+  
+  const type = watch("type");
+  const isInstallment = watch("isInstallment");
 
-  // Set the initial date if provided
   useEffect(() => {
-    if (initialDate) {
-      setDate(initialDate);
-    }
-  }, [initialDate]);
+    fetchUserCategories();
+  }, [session]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchUserCategories = async () => {
+    if (!session?.user) return;
     
-    if (!amount || !description || !category || !date) {
-      toast("Preencha todos os campos obrigatórios");
-      return;
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, color')
+        .eq('user_id', session.user.id);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar categorias:", error);
     }
-    
-    const data = {
-      type,
-      amount: parseFloat(amount),
-      description,
-      category,
-      date,
-      installments: showInstallments ? parseInt(installments) : 1,
+  };
+
+  const submitForm = (values: TransactionFormValues) => {
+    const formattedData = {
+      ...values,
+      amount: parseFloat(values.amount),
+      installments: parseInt(values.installments) || 1
     };
     
-    onSubmit(data);
-    
-    // Reset form
-    setAmount("");
-    setDescription("");
-    setCategory("");
-    setDate(new Date().toISOString().split("T")[0]);
-    setInstallments("1");
-    setShowInstallments(false);
-    
-    toast("Transação adicionada com sucesso!");
+    onSubmit(formattedData);
   };
 
   return (
@@ -91,125 +104,143 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
           Registre uma nova receita ou despesa
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              type="button"
-              variant={type === "income" ? "default" : "outline"}
-              className={cn(
-                "w-full",
-                type === "income" && "bg-sob-green hover:bg-sob-green/90"
-              )}
-              onClick={() => setType("income")}
-            >
-              Receita
-            </Button>
-            <Button
-              type="button"
-              variant={type === "expense" ? "default" : "outline"}
-              className={cn(
-                "w-full",
-                type === "expense" && "bg-destructive hover:bg-destructive/90"
-              )}
-              onClick={() => setType("expense")}
-            >
-              Despesa
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Valor (R$)</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              placeholder="0,00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Input
-              id="description"
-              placeholder="Ex: Conta de luz"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      <div className="flex items-center">
-                        <div
-                          className="mr-2 h-3 w-3 rounded-full"
-                          style={{ backgroundColor: cat.color }}
-                        ></div>
-                        {cat.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <Form {...form}>
+        <form onSubmit={handleSubmit(submitForm)}>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                type="button"
+                variant={type === "income" ? "default" : "outline"}
+                className={cn(
+                  "w-full",
+                  type === "income" && "bg-sob-green hover:bg-sob-green/90"
+                )}
+                onClick={() => setValue("type", "income")}
+              >
+                Receita
+              </Button>
+              <Button
+                type="button"
+                variant={type === "expense" ? "default" : "outline"}
+                className={cn(
+                  "w-full",
+                  type === "expense" && "bg-destructive hover:bg-destructive/90"
+                )}
+                onClick={() => setValue("type", "expense")}
+              >
+                Despesa
+              </Button>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date">Data</Label>
-              <div className="relative">
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-                <Calendar className="absolute right-3 top-2.5 h-4 w-4 text-gray-500" />
+              <Label htmlFor="amount">Valor (R$)</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0,00"
+                {...register("amount", { required: true })}
+              />
+              {errors.amount && (
+                <p className="text-red-500 text-xs">Valor é obrigatório</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Input
+                id="description"
+                placeholder="Ex: Conta de luz"
+                {...register("description", { required: true })}
+              />
+              {errors.description && (
+                <p className="text-red-500 text-xs">Descrição é obrigatória</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria</Label>
+                <Select 
+                  onValueChange={(value) => setValue("category", value)}
+                  value={form.watch("category")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <div className="flex items-center">
+                          <div
+                            className="mr-2 h-3 w-3 rounded-full"
+                            style={{ backgroundColor: cat.color }}
+                          ></div>
+                          {cat.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.category && (
+                  <p className="text-red-500 text-xs">Categoria é obrigatória</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date">Data</Label>
+                <div className="relative">
+                  <Input
+                    id="date"
+                    type="date"
+                    {...register("date", { required: true })}
+                  />
+                  <Calendar className="absolute right-3 top-2.5 h-4 w-4 text-gray-500" />
+                </div>
+                {errors.date && (
+                  <p className="text-red-500 text-xs">Data é obrigatória</p>
+                )}
               </div>
             </div>
-          </div>
 
-          {type === "expense" && (
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="installments-toggle"
-                checked={showInstallments}
-                onChange={() => setShowInstallments(!showInstallments)}
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor="installments-toggle">Parcelado</Label>
-            </div>
-          )}
+            {type === "expense" && (
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox 
+                  id="isInstallment" 
+                  checked={isInstallment}
+                  onCheckedChange={(checked) => setValue("isInstallment", !!checked)} 
+                />
+                <Label htmlFor="isInstallment" className="text-sm">Parcelado</Label>
+              </div>
+            )}
 
-          {showInstallments && (
-            <div className="space-y-2">
-              <Label htmlFor="installments">Número de parcelas</Label>
-              <Input
-                id="installments"
-                type="number"
-                min="2"
-                max="48"
-                value={installments}
-                onChange={(e) => setInstallments(e.target.value)}
-              />
-            </div>
-          )}
+            {isInstallment && (
+              <div className="space-y-2">
+                <Label htmlFor="installments">Número de parcelas</Label>
+                <Input
+                  id="installments"
+                  type="number"
+                  min="2"
+                  max="48"
+                  {...register("installments", { 
+                    min: 2, 
+                    max: 48,
+                    valueAsNumber: true
+                  })}
+                />
+                {errors.installments && (
+                  <p className="text-red-500 text-xs">Entre 2 e 48 parcelas</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full">
+              {type === "income" ? "Adicionar Receita" : "Adicionar Despesa"}
+            </Button>
+          </CardFooter>
         </form>
-      </CardContent>
-      <CardFooter>
-        <Button onClick={handleSubmit} className="w-full">
-          {type === "income" ? "Adicionar Receita" : "Adicionar Despesa"}
-        </Button>
-      </CardFooter>
+      </Form>
     </Card>
   );
 }
