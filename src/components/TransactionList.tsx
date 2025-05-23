@@ -3,25 +3,46 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import { Transaction } from "@/types";
 import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TransactionListProps {
   transactions: Transaction[];
 }
 
 export function TransactionList({ transactions }: TransactionListProps) {
-  const getCategoryName = (categoryId: string): string => {
-    const categories: Record<string, string> = {
-      "1": "Alimentação",
-      "2": "Transporte",
-      "3": "Moradia",
-      "4": "Educação",
-      "5": "Lazer",
-      "6": "Saúde",
-      "7": "Salário",
-      "8": "Investimentos",
+  const [categoriesMap, setCategoriesMap] = useState<Record<string, { name: string, color: string }>>({});
+  
+  // Buscar categorias do usuário
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id, name, color');
+        
+        if (error) throw error;
+        
+        if (data) {
+          const newCategoriesMap: Record<string, { name: string, color: string }> = {};
+          data.forEach(category => {
+            newCategoriesMap[category.id] = {
+              name: category.name,
+              color: category.color
+            };
+          });
+          setCategoriesMap(newCategoriesMap);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar categorias:", error);
+      }
     };
     
-    return categories[categoryId] || "Outros";
+    fetchCategories();
+  }, []);
+
+  const getCategoryName = (categoryId: string): string => {
+    return categoriesMap[categoryId]?.name || "Outros";
   };
 
   return (

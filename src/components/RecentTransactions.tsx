@@ -12,47 +12,55 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
 }
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+  const [categoriesMap, setCategoriesMap] = useState<Record<string, { name: string, color: string }>>({});
+  
+  // Buscar categorias do usuário
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id, name, color');
+        
+        if (error) throw error;
+        
+        if (data) {
+          const newCategoriesMap: Record<string, { name: string, color: string }> = {};
+          data.forEach(category => {
+            newCategoriesMap[category.id] = {
+              name: category.name,
+              color: category.color
+            };
+          });
+          setCategoriesMap(newCategoriesMap);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar categorias:", error);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("pt-BR").format(date);
   };
 
   const getCategoryColor = (categoryId: string) => {
-    // Simplified category ID to color mapping
-    const colors: Record<string, string> = {
-      "1": "#FF6B6B", // Alimentação
-      "2": "#4ECDC4", // Transporte
-      "3": "#45B7D1", // Moradia
-      "4": "#A367DC", // Educação
-      "5": "#FFA500", // Lazer
-      "6": "#38E54D", // Saúde
-      "7": "#00A76F", // Salário
-      "8": "#6366F1", // Investimentos
-    };
-    
-    return colors[categoryId] || "#8E9196";
+    return categoriesMap[categoryId]?.color || "#8E9196";
   };
 
   const getCategoryName = (categoryId: string) => {
-    // Simplified category ID to name mapping
-    const names: Record<string, string> = {
-      "1": "Alimentação",
-      "2": "Transporte",
-      "3": "Moradia",
-      "4": "Educação",
-      "5": "Lazer",
-      "6": "Saúde",
-      "7": "Salário",
-      "8": "Investimentos",
-    };
-    
-    return names[categoryId] || "Outros";
+    return categoriesMap[categoryId]?.name || "Outros";
   };
 
   return (
@@ -76,7 +84,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => (
+              {transactions.slice(0, 5).map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="font-medium">
                     {transaction.description}
