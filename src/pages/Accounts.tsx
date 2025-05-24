@@ -5,61 +5,17 @@ import { FooterSection } from "@/components/FooterSection";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { Account, AccountType } from "@/types";
+import { Account } from "@/types";
 import { AccountList } from "@/components/accounts/AccountList";
 import { AccountForm } from "@/components/accounts/AccountForm";
-
-// Mock accounts for demonstration
-const mockAccounts: Account[] = [
-  {
-    id: "1",
-    name: "Itaú Checking",
-    type: "checking",
-    lastFourDigits: "4321",
-    color: "#EC7000",
-    balance: 3580.45
-  },
-  {
-    id: "2",
-    name: "Nubank",
-    type: "checking",
-    lastFourDigits: "8765",
-    color: "#8A05BE",
-    balance: 1290.78
-  },
-  {
-    id: "3",
-    name: "Bradesco Credit Card",
-    type: "credit_card",
-    lastFourDigits: "9012",
-    color: "#CC092F",
-    limit: 5000,
-    dueDay: 10,
-    closingDay: 2
-  },
-  {
-    id: "4",
-    name: "Credicard",
-    type: "credit_card",
-    lastFourDigits: "6543",
-    color: "#003478",
-    limit: 3500,
-    dueDay: 15,
-    closingDay: 8
-  }
-];
+import { useAccounts } from "@/hooks/useAccounts";
 
 export default function Accounts() {
-  const [accounts, setAccounts] = useState<Account[]>(mockAccounts);
+  const { accounts, isLoading, addAccount } = useAccounts();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleAddAccount = (data: Omit<Account, "id">) => {
-    const newAccount: Account = {
-      id: `${accounts.length + 1}`,
-      ...data
-    };
-
-    setAccounts([...accounts, newAccount]);
+  const handleAddAccount = async (data: Omit<Account, "id">) => {
+    await addAccount(data);
     setIsDialogOpen(false);
   };
 
@@ -84,7 +40,13 @@ export default function Accounts() {
           </div>
         </div>
 
-        <AccountList accounts={accounts} />
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sob-blue"></div>
+          </div>
+        ) : (
+          <AccountList accounts={accounts} />
+        )}
       </main>
       
       <FooterSection />

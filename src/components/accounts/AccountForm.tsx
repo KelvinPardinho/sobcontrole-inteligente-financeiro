@@ -27,11 +27,12 @@ const formSchema = z.object({
     message: "O nome precisa ter pelo menos 2 caracteres.",
   }),
   type: z.enum(["checking", "savings", "credit_card", "investment", "other"]),
-  lastFourDigits: z.string().length(4, {
-    message: "Digite os 4 últimos dígitos",
-  }).regex(/^\d+$/, {
-    message: "Apenas números são permitidos",
-  }).optional(),
+  lastFourDigits: z.string().optional().refine((val) => {
+    if (!val) return true;
+    return val.length === 4 && /^\d+$/.test(val);
+  }, {
+    message: "Digite exatamente 4 dígitos numéricos",
+  }),
   color: z.string().optional(),
   balance: z.number().optional(),
   limit: z.number().optional(),
@@ -117,7 +118,7 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
           name="lastFourDigits"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Últimos 4 dígitos</FormLabel>
+              <FormLabel>Últimos 4 dígitos (opcional)</FormLabel>
               <FormControl>
                 <Input placeholder="Ex: 1234" maxLength={4} {...field} />
               </FormControl>
@@ -156,7 +157,7 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
                     step="0.01"
                     placeholder="0.00" 
                     {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -179,7 +180,7 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
                       step="0.01"
                       placeholder="0.00" 
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -201,7 +202,7 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
                         max={31}
                         placeholder="Ex: 15" 
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -222,7 +223,7 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
                         max={31}
                         placeholder="Ex: 8" 
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
                       />
                     </FormControl>
                     <FormMessage />
