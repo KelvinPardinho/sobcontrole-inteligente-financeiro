@@ -92,6 +92,7 @@ export const useTransactions = () => {
           date: transaction.date,
           description: transaction.description,
           category: transaction.category_id,
+          accountId: transaction.account_id,
           ...(transaction.installment_total && transaction.installment_current && {
             installment: {
               current: transaction.installment_current,
@@ -149,6 +150,7 @@ export const useTransactions = () => {
         date: data.date,
         description: data.description,
         category_id: data.category,
+        account_id: data.accountId, // Agora incluindo account_id
         installment_total: data.installments > 1 ? data.installments : null,
         installment_current: data.installments > 1 ? 1 : null,
       };

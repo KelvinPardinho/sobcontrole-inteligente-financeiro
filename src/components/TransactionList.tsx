@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from "@/lib/formatters";
 import { Transaction } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { useCategories } from "@/hooks/useCategories";
+import { useAccounts } from "@/hooks/useAccounts";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -11,6 +12,16 @@ interface TransactionListProps {
 
 export function TransactionList({ transactions }: TransactionListProps) {
   const { getCategoryName } = useCategories();
+  const { accounts } = useAccounts();
+
+  const getAccountName = (accountId: string): string => {
+    const account = accounts.find(acc => acc.id === accountId);
+    if (!account) return "Conta não encontrada";
+    
+    return account.lastFourDigits 
+      ? `${account.name} **** ${account.lastFourDigits}`
+      : account.name;
+  };
 
   return (
     <div className="border rounded-lg">
@@ -20,6 +31,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
             <TableHead>Data</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Categoria</TableHead>
+            <TableHead>Conta/Cartão</TableHead>
             <TableHead>Valor</TableHead>
             <TableHead>Tipo</TableHead>
           </TableRow>
@@ -27,7 +39,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
         <TableBody>
           {transactions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                 Nenhuma transação encontrada
               </TableCell>
             </TableRow>
@@ -44,6 +56,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
                   )}
                 </TableCell>
                 <TableCell>{getCategoryName(transaction.category)}</TableCell>
+                <TableCell className="text-sm">{getAccountName(transaction.accountId)}</TableCell>
                 <TableCell className={`font-medium ${transaction.type === "income" ? "text-green-600" : "text-red-600"}`}>
                   {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
                 </TableCell>

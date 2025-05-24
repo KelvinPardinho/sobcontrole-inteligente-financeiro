@@ -22,7 +22,7 @@ export interface Transaction {
   date: string;
   description: string;
   category: string;
-  accountId?: string;
+  accountId: string; // Agora obrigatório
   installment?: {
     current: number;
     total: number;

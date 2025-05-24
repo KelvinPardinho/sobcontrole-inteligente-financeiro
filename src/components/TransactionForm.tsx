@@ -37,6 +37,7 @@ interface TransactionFormValues {
   amount: string;
   description: string;
   category: string;
+  accountId: string;
   date: string;
   installments: string;
   isInstallment: boolean;
@@ -44,6 +45,7 @@ interface TransactionFormValues {
 
 export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps) {
   const [categories, setCategories] = useState<{ id: string; name: string; color: string }[]>([]);
+  const [accounts, setAccounts] = useState<{ id: string; name: string; type: string; lastFourDigits?: string }[]>([]);
   const { session } = useAuth();
   
   const form = useForm<TransactionFormValues>({
@@ -52,6 +54,7 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
       amount: "",
       description: "",
       category: "",
+      accountId: "",
       date: initialDate || new Date().toISOString().split("T")[0],
       installments: "1",
       isInstallment: false
@@ -65,6 +68,7 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
 
   useEffect(() => {
     fetchUserCategories();
+    fetchUserAccounts();
   }, [session]);
 
   const fetchUserCategories = async () => {
@@ -84,6 +88,42 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
     } catch (error) {
       console.error("Erro ao buscar categorias:", error);
     }
+  };
+
+  const fetchUserAccounts = async () => {
+    if (!session?.user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('id, name, type, last_four_digits')
+        .eq('user_id', session.user.id)
+        .order('name');
+      
+      if (error) throw error;
+      
+      if (data) {
+        setAccounts(data.map(account => ({
+          id: account.id,
+          name: account.name,
+          type: account.type,
+          lastFourDigits: account.last_four_digits || undefined
+        })));
+      }
+    } catch (error) {
+      console.error("Erro ao buscar contas:", error);
+    }
+  };
+
+  const getAccountTypeLabel = (type: string) => {
+    const types: Record<string, string> = {
+      checking: "Conta Corrente",
+      savings: "Conta Poupança",
+      credit_card: "Cartão de Crédito",
+      investment: "Investimento",
+      other: "Outro"
+    };
+    return types[type] || type;
   };
 
   const submitForm = (values: TransactionFormValues) => {
@@ -155,6 +195,34 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
               />
               {errors.description && (
                 <p className="text-red-500 text-xs">Descrição é obrigatória</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="accountId">Conta/Cartão</Label>
+              <Select 
+                onValueChange={(value) => setValue("accountId", value)}
+                value={form.watch("accountId")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma conta ou cartão" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      <div className="flex items-center">
+                        {account.name}
+                        {account.lastFourDigits && ` **** ${account.lastFourDigits}`}
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          ({getAccountTypeLabel(account.type)})
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.accountId && (
+                <p className="text-red-500 text-xs">Conta/Cartão é obrigatório</p>
               )}
             </div>
 
