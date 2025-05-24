@@ -14,12 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCategories } from "@/hooks/useCategories";
 
 type InstallmentsFiltersProps = {
   onFilterChange: (filters: any) => void;
 };
 
 export function InstallmentsFilters({ onFilterChange }: InstallmentsFiltersProps) {
+  const { categories, isLoading: categoriesLoading } = useCategories();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [search, setSearch] = useState("");
@@ -59,17 +61,17 @@ export function InstallmentsFilters({ onFilterChange }: InstallmentsFiltersProps
       <div className="grid gap-4 md:grid-cols-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Categoria</label>
-          <Select value={category} onValueChange={setCategory}>
+          <Select value={category} onValueChange={setCategory} disabled={categoriesLoading}>
             <SelectTrigger>
-              <SelectValue placeholder="Todas as categorias" />
+              <SelectValue placeholder={categoriesLoading ? "Carregando..." : "Todas as categorias"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as categorias</SelectItem>
-              <SelectItem value="1">Alimentação</SelectItem>
-              <SelectItem value="2">Eletrônicos</SelectItem>
-              <SelectItem value="3">Moradia</SelectItem>
-              <SelectItem value="4">Transporte</SelectItem>
-              <SelectItem value="5">Lazer</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
