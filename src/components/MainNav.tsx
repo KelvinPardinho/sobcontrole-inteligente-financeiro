@@ -31,11 +31,11 @@ export function MainNav() {
   };
 
   return (
-    <div className="flex items-center justify-between border-b bg-background px-4 py-3">
+    <div className="flex items-center justify-between border-b border-border bg-background px-4 py-3">
       <div className="flex items-center">
         <Link to="/" className="flex items-center">
           <h1 className="text-xl font-bold">
-            <span className="text-sob-blue">Sob</span>Controle
+            <span className="text-sob-blue">Sob</span><span className="text-foreground">Controle</span>
           </h1>
         </Link>
       </div>
@@ -50,6 +50,7 @@ export function MainNav() {
                   <NavigationMenuLink
                     className={cn(
                       navigationMenuTriggerStyle(),
+                      "text-foreground hover:text-foreground",
                       isActive(route.path) &&
                         "bg-accent text-accent-foreground"
                     )}
@@ -77,7 +78,7 @@ export function MainNav() {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right">
+          <SheetContent side="right" className="bg-background border-border">
             <nav className="flex flex-col gap-4 mt-8">
               {routes.map((route) => (
                 <Link

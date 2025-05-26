@@ -29,18 +29,18 @@ export function InstallmentsList({ installments, onMarkAsPaid }: InstallmentsLis
   );
 
   return (
-    <div className="rounded-md border bg-white">
+    <div className="rounded-md border bg-card border-border">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[200px]">Descrição</TableHead>
-            <TableHead className="w-[120px]">Categoria</TableHead>
-            <TableHead className="w-[100px]">Data Compra</TableHead>
-            <TableHead className="w-[100px]">Valor Parcela</TableHead>
-            <TableHead className="w-[80px]">Parcelas</TableHead>
-            <TableHead className="w-[120px]">Progresso</TableHead>
-            <TableHead className="w-[100px]">Valor Total</TableHead>
-            <TableHead className="min-w-[300px]">Controle de Pagamento</TableHead>
+          <TableRow className="border-border hover:bg-muted/50">
+            <TableHead className="w-[200px] text-muted-foreground">Descrição</TableHead>
+            <TableHead className="w-[120px] text-muted-foreground">Categoria</TableHead>
+            <TableHead className="w-[100px] text-muted-foreground">Data Compra</TableHead>
+            <TableHead className="w-[100px] text-muted-foreground">Valor Parcela</TableHead>
+            <TableHead className="w-[80px] text-muted-foreground">Parcelas</TableHead>
+            <TableHead className="w-[120px] text-muted-foreground">Progresso</TableHead>
+            <TableHead className="w-[100px] text-muted-foreground">Valor Total</TableHead>
+            <TableHead className="min-w-[300px] text-muted-foreground">Controle de Pagamento</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -58,8 +58,8 @@ export function InstallmentsList({ installments, onMarkAsPaid }: InstallmentsLis
               const totalAmount = transaction.amount * total;
               
               return (
-                <TableRow key={transaction.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{transaction.description}</TableCell>
+                <TableRow key={transaction.id} className="hover:bg-muted/50 border-border">
+                  <TableCell className="font-medium text-foreground">{transaction.description}</TableCell>
                   <TableCell>
                     <Badge
                       variant="outline"
@@ -72,12 +72,12 @@ export function InstallmentsList({ installments, onMarkAsPaid }: InstallmentsLis
                       {getCategoryName(transaction.category)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-sm text-muted-foreground">
                     {format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR })}
                   </TableCell>
-                  <TableCell className="font-medium">R$ {transaction.amount.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium text-foreground">R$ {transaction.amount.toFixed(2)}</TableCell>
                   <TableCell className="text-center">
-                    <span className="text-sm font-medium">{current}/{total}</span>
+                    <span className="text-sm font-medium text-foreground">{current}/{total}</span>
                   </TableCell>
                   <TableCell>
                     <div className="w-full max-w-24">
@@ -87,7 +87,7 @@ export function InstallmentsList({ installments, onMarkAsPaid }: InstallmentsLis
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">R$ {totalAmount.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium text-foreground">R$ {totalAmount.toFixed(2)}</TableCell>
                   <TableCell>
                     <MonthlyInstallmentControl
                       transaction={transaction}

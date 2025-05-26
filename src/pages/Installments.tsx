@@ -63,18 +63,18 @@ export default function Installments() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       <MainNav />
       
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Controle de Parcelas</h1>
+          <h1 className="text-2xl font-bold text-foreground">Controle de Parcelas</h1>
           <p className="text-muted-foreground">Gerencie todas as suas compras parceladas e controle os pagamentos mensais</p>
         </div>
 
         {isLoading ? (
           <div className="flex justify-center items-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sob-blue"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : (
           <div className="space-y-6">
@@ -82,7 +82,7 @@ export default function Installments() {
             <InstallmentsFilters onFilterChange={handleFilterChange} />
             
             {/* Tabela principal - ocupa toda a largura */}
-            <div className="bg-white rounded-lg shadow-sm">
+            <div className="bg-card rounded-lg shadow-sm border">
               <InstallmentsList 
                 installments={filteredInstallments} 
                 onMarkAsPaid={markInstallmentAsPaid}

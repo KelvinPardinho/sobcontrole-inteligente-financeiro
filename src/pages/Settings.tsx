@@ -7,11 +7,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Bell, Moon, Sun, Globe, Shield, Save } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function Settings() {
+  const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState({
     notifications: true,
-    darkMode: false,
     language: "pt-BR",
     privacy: {
       shareData: false,
@@ -37,18 +38,18 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <MainNav />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold">Configurações</h1>
+          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Bell className="h-5 w-5" />
                 Notificações
               </CardTitle>
@@ -56,7 +57,7 @@ export default function Settings() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="notifications" className="flex-1">
+                  <Label htmlFor="notifications" className="flex-1 text-foreground">
                     Ativar notificações
                   </Label>
                   <Switch
@@ -72,23 +73,23 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {settings.darkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                 Aparência
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="darkMode" className="flex-1">
+                  <Label htmlFor="darkMode" className="flex-1 text-foreground">
                     Modo escuro
                   </Label>
                   <Switch
                     id="darkMode"
-                    checked={settings.darkMode}
-                    onCheckedChange={() => handleToggle('darkMode')}
+                    checked={theme === "dark"}
+                    onCheckedChange={() => setTheme(theme === "dark" ? "light" : "dark")}
                   />
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -98,9 +99,9 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Globe className="h-5 w-5" />
                 Idioma e Região
               </CardTitle>
@@ -108,10 +109,10 @@ export default function Settings() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="language">Idioma</Label>
+                  <Label htmlFor="language" className="text-foreground">Idioma</Label>
                   <select
                     id="language"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2"
+                    className="w-full rounded-md border border-border bg-background text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                     value={settings.language}
                     onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
                   >
@@ -127,9 +128,9 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Shield className="h-5 w-5" />
                 Privacidade
               </CardTitle>
@@ -137,7 +138,7 @@ export default function Settings() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="shareData" className="flex-1">
+                  <Label htmlFor="shareData" className="flex-1 text-foreground">
                     Compartilhar dados para melhorar o serviço
                   </Label>
                   <Switch
@@ -147,7 +148,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="showBalance" className="flex-1">
+                  <Label htmlFor="showBalance" className="flex-1 text-foreground">
                     Mostrar saldo na tela inicial
                   </Label>
                   <Switch
@@ -162,7 +163,7 @@ export default function Settings() {
         </div>
 
         <div className="mt-6 flex justify-end">
-          <Button className="bg-sob-blue hover:bg-sob-blue/90">
+          <Button className="bg-sob-blue hover:bg-sob-blue/90 text-white">
             <Save className="mr-2 h-4 w-4" /> Salvar Alterações
           </Button>
         </div>
