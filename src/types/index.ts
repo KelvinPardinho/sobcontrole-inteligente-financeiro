@@ -26,6 +26,7 @@ export interface Transaction {
   installment?: {
     current: number;
     total: number;
+    paid?: boolean; // Status de pagamento da parcela
   };
 }
 

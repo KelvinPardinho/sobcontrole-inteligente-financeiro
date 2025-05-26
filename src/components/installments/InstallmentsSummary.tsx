@@ -14,9 +14,9 @@ type InstallmentsSummaryProps = {
 };
 
 export function InstallmentsSummary({ installments }: InstallmentsSummaryProps) {
-  // Calculate total remaining amount
+  // Calculate total remaining amount (only unpaid installments)
   const totalRemainingAmount = installments.reduce((total, transaction) => {
-    if (!transaction.installment) return total;
+    if (!transaction.installment || transaction.installment.paid) return total;
     
     const { current, total: totalInstallments } = transaction.installment;
     const remainingInstallments = totalInstallments - current;
@@ -29,16 +29,18 @@ export function InstallmentsSummary({ installments }: InstallmentsSummaryProps) 
   const totalPaidAmount = installments.reduce((total, transaction) => {
     if (!transaction.installment) return total;
     
-    const { current } = transaction.installment;
-    const paidAmount = transaction.amount * current;
-    
-    return total + paidAmount;
+    const { current, paid } = transaction.installment;
+    if (paid) {
+      return total + transaction.amount; // Current installment paid
+    } else {
+      const paidInstallments = Math.max(0, current - 1); // Previous installments
+      return total + (transaction.amount * paidInstallments);
+    }
   }, 0);
 
-  // Calculate upcoming monthly payments
-  // This is a simplification - in a real app you'd calculate based on due dates
+  // Calculate upcoming monthly payments (unpaid installments)
   const nextMonthPayments = installments.reduce((total, transaction) => {
-    if (!transaction.installment) return total;
+    if (!transaction.installment || transaction.installment.paid) return total;
     
     const { current, total: totalInstallments } = transaction.installment;
     if (current < totalInstallments) {
@@ -47,10 +49,14 @@ export function InstallmentsSummary({ installments }: InstallmentsSummaryProps) 
     return total;
   }, 0);
 
+  // Count paid vs unpaid installments
+  const paidInstallments = installments.filter(t => t.installment?.paid).length;
+  const unpaidInstallments = installments.filter(t => !t.installment?.paid).length;
+
   // Prepare data for pie chart
   const chartData = [
-    { name: "Pago", value: totalPaidAmount },
-    { name: "A pagar", value: totalRemainingAmount },
+    { name: "Pagas", value: paidInstallments },
+    { name: "Pendentes", value: unpaidInstallments },
   ];
 
   // Colors for the pie chart
@@ -91,7 +97,7 @@ export function InstallmentsSummary({ installments }: InstallmentsSummaryProps) 
             
             <Card>
               <CardHeader className="p-4 pb-2">
-                <CardDescription>Próximo mês</CardDescription>
+                <CardDescription>Próximas parcelas</CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="text-xl font-bold">
@@ -112,13 +118,13 @@ export function InstallmentsSummary({ installments }: InstallmentsSummaryProps) 
                     fill="#8884d8"
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, value }) => `${name}: ${value}`}
                   >
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `R$ ${Number(value).toFixed(2)}`} />
+                  <Tooltip />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -129,30 +135,26 @@ export function InstallmentsSummary({ installments }: InstallmentsSummaryProps) 
       
       <Card>
         <CardHeader>
-          <CardTitle>Estatísticas</CardTitle>
+          <CardTitle>Estatísticas de Pagamento</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
+            <div className="flex justify-between">
+              <span>Parcelas pagas:</span>
+              <span className="font-bold text-green-600">{paidInstallments}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Parcelas pendentes:</span>
+              <span className="font-bold text-red-600">{unpaidInstallments}</span>
+            </div>
             <div className="flex justify-between">
               <span>Total de compras parceladas:</span>
               <span className="font-bold">{installments.length}</span>
             </div>
             <div className="flex justify-between">
-              <span>Parcelas restantes (todas):</span>
+              <span>Média por parcela pendente:</span>
               <span className="font-bold">
-                {installments.reduce((total, transaction) => {
-                  if (!transaction.installment) return total;
-                  const { current, total: totalInstallments } = transaction.installment;
-                  return total + (totalInstallments - current);
-                }, 0)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Média por parcela:</span>
-              <span className="font-bold">
-                R$ {(nextMonthPayments / installments.filter(t => 
-                  t.installment && t.installment.current < t.installment.total
-                ).length || 0).toFixed(2)}
+                R$ {unpaidInstallments > 0 ? (nextMonthPayments / unpaidInstallments).toFixed(2) : "0,00"}
               </span>
             </div>
           </div>

@@ -9,13 +9,13 @@ import { InstallmentsFilters } from "@/components/installments/InstallmentsFilte
 import { useInstallments } from "@/hooks/useInstallments";
 
 export default function Installments() {
-  const { installments, isLoading } = useInstallments();
+  const { installments, isLoading, markInstallmentAsPaid } = useInstallments();
   const [filters, setFilters] = useState({
     category: "all",
     startDate: "",
     endDate: "",
     search: "",
-    status: "all", // all, active, completed
+    status: "all", // all, active, completed, paid, unpaid
   });
 
   const handleFilterChange = (newFilters: any) => {
@@ -24,13 +24,19 @@ export default function Installments() {
 
   // Apply filters to transactions
   const filteredInstallments = installments.filter((transaction) => {
-    // Status filter (active, completed, all)
+    // Status filter (active, completed, paid, unpaid, all)
     if (filters.status === "active" && transaction.installment && 
         transaction.installment.current >= transaction.installment.total) {
       return false;
     }
     if (filters.status === "completed" && transaction.installment && 
         transaction.installment.current < transaction.installment.total) {
+      return false;
+    }
+    if (filters.status === "paid" && (!transaction.installment?.paid)) {
+      return false;
+    }
+    if (filters.status === "unpaid" && transaction.installment?.paid) {
       return false;
     }
     
@@ -63,7 +69,7 @@ export default function Installments() {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Controle de Parcelas</h1>
-          <p className="text-muted-foreground">Gerencie todas as suas compras parceladas</p>
+          <p className="text-muted-foreground">Gerencie todas as suas compras parceladas e controle os pagamentos</p>
         </div>
 
         {isLoading ? (
@@ -74,7 +80,10 @@ export default function Installments() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <InstallmentsFilters onFilterChange={handleFilterChange} />
-              <InstallmentsList installments={filteredInstallments} />
+              <InstallmentsList 
+                installments={filteredInstallments} 
+                onMarkAsPaid={markInstallmentAsPaid}
+              />
             </div>
             <div>
               <InstallmentsSummary installments={installments} />

@@ -48,10 +48,11 @@ export const useInstallments = () => {
           date: transaction.date,
           description: transaction.description,
           category: transaction.category_id,
-          accountId: transaction.account_id, // Adicionando o campo obrigatório
+          accountId: transaction.account_id,
           installment: {
             current: transaction.installment_current || 1,
-            total: transaction.installment_total || 1
+            total: transaction.installment_total || 1,
+            paid: transaction.installment_paid || false
           }
         }));
         
@@ -66,9 +67,43 @@ export const useInstallments = () => {
     }
   };
 
+  const markInstallmentAsPaid = async (transactionId: string, paid: boolean) => {
+    if (!session?.user) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
+
+    try {
+      console.log("Marking installment as paid:", transactionId, paid);
+      
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          installment_paid: paid
+        })
+        .eq('id', transactionId)
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error("Error updating installment payment status:", error);
+        throw error;
+      }
+
+      console.log("Installment payment status updated successfully");
+      toast.success(paid ? "Parcela marcada como paga!" : "Parcela desmarcada como paga!");
+      
+      // Refresh installments list
+      await fetchInstallments();
+    } catch (error: any) {
+      toast.error(`Erro ao atualizar status da parcela: ${error.message}`);
+      console.error("Erro ao atualizar status da parcela:", error);
+    }
+  };
+
   return {
     installments,
     isLoading,
-    fetchInstallments
+    fetchInstallments,
+    markInstallmentAsPaid
   };
 };

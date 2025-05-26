@@ -13,12 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useCategories } from "@/hooks/useCategories";
+import { InstallmentPaymentControl } from "./InstallmentPaymentControl";
 
 type InstallmentsListProps = {
   installments: Transaction[];
+  onMarkAsPaid: (transactionId: string, paid: boolean) => void;
 };
 
-export function InstallmentsList({ installments }: InstallmentsListProps) {
+export function InstallmentsList({ installments, onMarkAsPaid }: InstallmentsListProps) {
   const { getCategoryName, getCategoryColor } = useCategories();
   
   // Sort by date (most recent first)
@@ -33,17 +35,18 @@ export function InstallmentsList({ installments }: InstallmentsListProps) {
           <TableRow>
             <TableHead>Descrição</TableHead>
             <TableHead>Categoria</TableHead>
-            <TableHead>Data</TableHead>
+            <TableHead>Data Compra</TableHead>
             <TableHead>Valor Parcela</TableHead>
             <TableHead>Parcelas</TableHead>
             <TableHead>Progresso</TableHead>
             <TableHead>Valor Total</TableHead>
+            <TableHead>Status Pagamento</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedInstallments.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                 Nenhuma compra parcelada encontrada
               </TableCell>
             </TableRow>
@@ -84,6 +87,12 @@ export function InstallmentsList({ installments }: InstallmentsListProps) {
                     </div>
                   </TableCell>
                   <TableCell>R$ {totalAmount.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <InstallmentPaymentControl
+                      transaction={transaction}
+                      onMarkAsPaid={onMarkAsPaid}
+                    />
+                  </TableCell>
                 </TableRow>
               );
             })

@@ -192,6 +192,7 @@ export type Database = {
           description: string
           id: string
           installment_current: number | null
+          installment_paid: boolean | null
           installment_total: number | null
           type: string
           updated_at: string
@@ -206,6 +207,7 @@ export type Database = {
           description: string
           id?: string
           installment_current?: number | null
+          installment_paid?: boolean | null
           installment_total?: number | null
           type: string
           updated_at?: string
@@ -220,6 +222,7 @@ export type Database = {
           description?: string
           id?: string
           installment_current?: number | null
+          installment_paid?: boolean | null
           installment_total?: number | null
           type?: string
           updated_at?: string
