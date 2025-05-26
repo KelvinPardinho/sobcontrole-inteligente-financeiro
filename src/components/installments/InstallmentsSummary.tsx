@@ -63,100 +63,57 @@ export function InstallmentsSummary({ installments }: InstallmentsSummaryProps) 
   const COLORS = ["#10b981", "#f43f5e"];
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Cards de resumo */}
       <Card>
-        <CardHeader>
-          <CardTitle>Resumo de Parcelas</CardTitle>
-          <CardDescription>Visão geral das suas compras parceladas</CardDescription>
+        <CardHeader className="pb-2">
+          <CardDescription className="text-xs">Total já pago</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardDescription>Total já pago</CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="text-xl font-bold text-green-500">
-                    R$ {totalPaidAmount.toFixed(2)}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardDescription>Total a pagar</CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="text-xl font-bold text-rose-500">
-                    R$ {totalRemainingAmount.toFixed(2)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardDescription>Próximas parcelas</CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="text-xl font-bold">
-                  R$ {nextMonthPayments.toFixed(2)}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+        <CardContent className="pt-0">
+          <div className="text-xl font-bold text-green-600">
+            R$ {totalPaidAmount.toFixed(2)}
           </div>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader>
-          <CardTitle>Estatísticas de Pagamento</CardTitle>
+        <CardHeader className="pb-2">
+          <CardDescription className="text-xs">Total a pagar</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span>Parcelas pagas:</span>
-              <span className="font-bold text-green-600">{paidInstallments}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Parcelas pendentes:</span>
-              <span className="font-bold text-red-600">{unpaidInstallments}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Total de compras parceladas:</span>
-              <span className="font-bold">{installments.length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Média por parcela pendente:</span>
-              <span className="font-bold">
-                R$ {unpaidInstallments > 0 ? (nextMonthPayments / unpaidInstallments).toFixed(2) : "0,00"}
-              </span>
-            </div>
+        <CardContent className="pt-0">
+          <div className="text-xl font-bold text-rose-600">
+            R$ {totalRemainingAmount.toFixed(2)}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="pb-2">
+          <CardDescription className="text-xs">Próximas parcelas</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="text-xl font-bold text-blue-600">
+            R$ {nextMonthPayments.toFixed(2)}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="pb-2">
+          <CardDescription className="text-xs">Estatísticas</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-1">
+          <div className="flex justify-between text-xs">
+            <span>Pagas:</span>
+            <span className="font-bold text-green-600">{paidInstallments}</span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span>Pendentes:</span>
+            <span className="font-bold text-red-600">{unpaidInstallments}</span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span>Total:</span>
+            <span className="font-bold">{installments.length}</span>
           </div>
         </CardContent>
       </Card>

@@ -63,30 +63,37 @@ export default function Installments() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <MainNav />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold">Controle de Parcelas</h1>
-          <p className="text-muted-foreground">Gerencie todas as suas compras parceladas e controle os pagamentos</p>
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Controle de Parcelas</h1>
+          <p className="text-muted-foreground">Gerencie todas as suas compras parceladas e controle os pagamentos mensais</p>
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center items-center py-12">
+          <div className="flex justify-center items-center py-16">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sob-blue"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <InstallmentsFilters onFilterChange={handleFilterChange} />
+          <div className="space-y-6">
+            {/* Filtros */}
+            <InstallmentsFilters onFilterChange={handleFilterChange} />
+            
+            {/* Tabela principal - ocupa toda a largura */}
+            <div className="bg-white rounded-lg shadow-sm">
               <InstallmentsList 
                 installments={filteredInstallments} 
                 onMarkAsPaid={markInstallmentAsPaid}
               />
             </div>
-            <div>
-              <InstallmentsSummary installments={installments} />
+            
+            {/* Resumo e gráficos abaixo da tabela */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 xl:col-span-3">
+                <InstallmentsSummary installments={installments} />
+              </div>
             </div>
           </div>
         )}

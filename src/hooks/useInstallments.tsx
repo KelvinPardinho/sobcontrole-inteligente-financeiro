@@ -4,6 +4,7 @@ import { Transaction } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/sonner";
+import { addMonths, differenceInMonths, isAfter, startOfMonth } from "date-fns";
 
 export const useInstallments = () => {
   const [installments, setInstallments] = useState<Transaction[]>([]);
@@ -40,23 +41,33 @@ export const useInstallments = () => {
       console.log("Raw installments data from DB:", data);
       
       if (data) {
-        // Formatar transações para o formato esperado
-        const formattedInstallments: Transaction[] = data.map(transaction => ({
-          id: transaction.id,
-          type: transaction.type as 'income' | 'expense',
-          amount: Number(transaction.amount),
-          date: transaction.date,
-          description: transaction.description,
-          category: transaction.category_id,
-          accountId: transaction.account_id,
-          installment: {
-            current: transaction.installment_current || 1,
-            total: transaction.installment_total || 1,
-            paid: transaction.installment_paid || false
-          }
-        }));
+        // Formatar transações para o formato esperado com cálculo de progresso baseado em data
+        const formattedInstallments: Transaction[] = data.map(transaction => {
+          const purchaseDate = new Date(transaction.date);
+          const today = new Date();
+          const totalInstallments = transaction.installment_total || 1;
+          
+          // Calcular quantas parcelas já venceram baseado na diferença de meses
+          const monthsElapsed = differenceInMonths(startOfMonth(today), startOfMonth(purchaseDate));
+          const currentInstallment = Math.min(Math.max(monthsElapsed + 1, 1), totalInstallments);
+          
+          return {
+            id: transaction.id,
+            type: transaction.type as 'income' | 'expense',
+            amount: Number(transaction.amount),
+            date: transaction.date,
+            description: transaction.description,
+            category: transaction.category_id,
+            accountId: transaction.account_id,
+            installment: {
+              current: currentInstallment,
+              total: totalInstallments,
+              paid: transaction.installment_paid || false
+            }
+          };
+        });
         
-        console.log("Formatted installments:", formattedInstallments);
+        console.log("Formatted installments with calculated progress:", formattedInstallments);
         setInstallments(formattedInstallments);
       }
     } catch (error: any) {

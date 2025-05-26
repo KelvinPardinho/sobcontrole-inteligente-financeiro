@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useCategories } from "@/hooks/useCategories";
-import { InstallmentPaymentControl } from "./InstallmentPaymentControl";
+import { MonthlyInstallmentControl } from "./MonthlyInstallmentControl";
 
 type InstallmentsListProps = {
   installments: Transaction[];
@@ -29,24 +29,24 @@ export function InstallmentsList({ installments, onMarkAsPaid }: InstallmentsLis
   );
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border bg-white">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Descrição</TableHead>
-            <TableHead>Categoria</TableHead>
-            <TableHead>Data Compra</TableHead>
-            <TableHead>Valor Parcela</TableHead>
-            <TableHead>Parcelas</TableHead>
-            <TableHead>Progresso</TableHead>
-            <TableHead>Valor Total</TableHead>
-            <TableHead>Status Pagamento</TableHead>
+            <TableHead className="w-[200px]">Descrição</TableHead>
+            <TableHead className="w-[120px]">Categoria</TableHead>
+            <TableHead className="w-[100px]">Data Compra</TableHead>
+            <TableHead className="w-[100px]">Valor Parcela</TableHead>
+            <TableHead className="w-[80px]">Parcelas</TableHead>
+            <TableHead className="w-[120px]">Progresso</TableHead>
+            <TableHead className="w-[100px]">Valor Total</TableHead>
+            <TableHead className="min-w-[300px]">Controle de Pagamento</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedInstallments.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                 Nenhuma compra parcelada encontrada
               </TableCell>
             </TableRow>
@@ -58,7 +58,7 @@ export function InstallmentsList({ installments, onMarkAsPaid }: InstallmentsLis
               const totalAmount = transaction.amount * total;
               
               return (
-                <TableRow key={transaction.id}>
+                <TableRow key={transaction.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">{transaction.description}</TableCell>
                   <TableCell>
                     <Badge
@@ -67,28 +67,29 @@ export function InstallmentsList({ installments, onMarkAsPaid }: InstallmentsLis
                         borderColor: getCategoryColor(transaction.category),
                         color: getCategoryColor(transaction.category),
                       }}
+                      className="text-xs"
                     >
                       {getCategoryName(transaction.category)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {format(new Date(transaction.date), "dd MMM yyyy", { locale: ptBR })}
+                  <TableCell className="text-sm">
+                    {format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR })}
                   </TableCell>
-                  <TableCell>R$ {transaction.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    {current}/{total}
+                  <TableCell className="font-medium">R$ {transaction.amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-center">
+                    <span className="text-sm font-medium">{current}/{total}</span>
                   </TableCell>
                   <TableCell>
-                    <div className="w-full max-w-32">
+                    <div className="w-full max-w-24">
                       <Progress value={progress} className="h-2" />
                       <span className="text-xs text-muted-foreground mt-1 block">
-                        {Math.round(progress)}% concluído
+                        {Math.round(progress)}%
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>R$ {totalAmount.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium">R$ {totalAmount.toFixed(2)}</TableCell>
                   <TableCell>
-                    <InstallmentPaymentControl
+                    <MonthlyInstallmentControl
                       transaction={transaction}
                       onMarkAsPaid={onMarkAsPaid}
                     />
