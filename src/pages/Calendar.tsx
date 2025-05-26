@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { toast } from "@/components/ui/sonner";
 
-// Mock data para demonstração
+// Mock data com accountId obrigatório
 const mockTransactions: Transaction[] = [
   {
     id: "1",
@@ -18,6 +18,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-01",
     description: "Supermercado",
     category: "1",
+    accountId: "mock-account-1",
   },
   {
     id: "2",
@@ -26,6 +27,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-05",
     description: "Aluguel",
     category: "3",
+    accountId: "mock-account-2",
     installment: {
       current: 6,
       total: 12,
@@ -38,6 +40,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-10",
     description: "Salário",
     category: "7",
+    accountId: "mock-account-1",
   },
   {
     id: "4",
@@ -46,6 +49,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-15",
     description: "Internet",
     category: "3",
+    accountId: "mock-account-2",
   },
   {
     id: "5",
@@ -54,15 +58,16 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-20",
     description: "Uber",
     category: "2",
+    accountId: "mock-account-3",
   },
-  // Adicionar algumas transações futuras para demonstrar o calendário
   {
     id: "6",
     type: "expense",
     amount: 200.0,
-    date: "2023-07-05", // Próximo mês
+    date: "2023-07-05",
     description: "Aluguel",
     category: "3",
+    accountId: "mock-account-2",
     installment: {
       current: 7,
       total: 12,
@@ -72,17 +77,19 @@ const mockTransactions: Transaction[] = [
     id: "7",
     type: "expense",
     amount: 89.9,
-    date: "2023-07-15", // Próximo mês
+    date: "2023-07-15",
     description: "Internet",
     category: "3",
+    accountId: "mock-account-2",
   },
   {
     id: "8",
     type: "income",
     amount: 3500.0,
-    date: "2023-07-10", // Próximo mês
+    date: "2023-07-10",
     description: "Salário",
     category: "7",
+    accountId: "mock-account-1",
   },
   {
     id: "9",
@@ -91,6 +98,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-25",
     description: "Freelance",
     category: "7",
+    accountId: "mock-account-1",
   }
 ];
 
@@ -118,6 +126,7 @@ export default function Calendar() {
       date: data.date,
       description: data.description,
       category: data.category,
+      accountId: data.accountId || "mock-account-1", // Garantindo que tenha accountId
       ...(data.installments > 1 && {
         installment: {
           current: 1,

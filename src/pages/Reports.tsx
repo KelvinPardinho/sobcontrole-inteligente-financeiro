@@ -9,7 +9,7 @@ import { ReportCharts } from "@/components/ReportCharts";
 import { DashboardStats, Transaction } from "@/types";
 import { DateRange } from "react-day-picker";
 
-// Mock data para demonstração
+// Mock data com accountId obrigatório
 const mockTransactions: Transaction[] = [
   {
     id: "1",
@@ -18,6 +18,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-01",
     description: "Supermercado",
     category: "1",
+    accountId: "mock-account-1",
   },
   {
     id: "2",
@@ -26,6 +27,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-05",
     description: "Aluguel",
     category: "3",
+    accountId: "mock-account-2",
     installment: {
       current: 6,
       total: 12,
@@ -38,6 +40,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-10",
     description: "Salário",
     category: "7",
+    accountId: "mock-account-1",
   },
   {
     id: "4",
@@ -46,6 +49,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-15",
     description: "Internet",
     category: "3",
+    accountId: "mock-account-2",
   },
   {
     id: "5",
@@ -54,6 +58,7 @@ const mockTransactions: Transaction[] = [
     date: "2023-06-20",
     description: "Uber",
     category: "2",
+    accountId: "mock-account-3",
   },
 ];
 

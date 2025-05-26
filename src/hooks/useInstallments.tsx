@@ -48,6 +48,7 @@ export const useInstallments = () => {
           date: transaction.date,
           description: transaction.description,
           category: transaction.category_id,
+          accountId: transaction.account_id, // Adicionando o campo obrigatório
           installment: {
             current: transaction.installment_current || 1,
             total: transaction.installment_total || 1
