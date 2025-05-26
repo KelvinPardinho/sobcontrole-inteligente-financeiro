@@ -101,10 +101,85 @@ export const useAccounts = () => {
     }
   };
 
+  const updateAccount = async (accountId: string, accountData: Omit<Account, "id">) => {
+    if (!session?.user) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
+
+    try {
+      console.log("Updating account:", accountId, accountData);
+      
+      const { data, error } = await supabase
+        .from('accounts')
+        .update({
+          name: accountData.name,
+          type: accountData.type,
+          last_four_digits: accountData.lastFourDigits,
+          color: accountData.color,
+          balance: accountData.balance,
+          credit_limit: accountData.limit,
+          due_day: accountData.dueDay,
+          closing_day: accountData.closingDay
+        })
+        .eq('id', accountId)
+        .eq('user_id', session.user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating account:", error);
+        throw error;
+      }
+
+      console.log("Account updated successfully:", data);
+      toast.success("Conta atualizada com sucesso!");
+      
+      // Refresh accounts list
+      await fetchAccounts();
+    } catch (error: any) {
+      toast.error(`Erro ao atualizar conta: ${error.message}`);
+      console.error("Erro ao atualizar conta:", error);
+    }
+  };
+
+  const deleteAccount = async (accountId: string) => {
+    if (!session?.user) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
+
+    try {
+      console.log("Deleting account:", accountId);
+      
+      const { error } = await supabase
+        .from('accounts')
+        .delete()
+        .eq('id', accountId)
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error("Error deleting account:", error);
+        throw error;
+      }
+
+      console.log("Account deleted successfully");
+      toast.success("Conta excluída com sucesso!");
+      
+      // Refresh accounts list
+      await fetchAccounts();
+    } catch (error: any) {
+      toast.error(`Erro ao excluir conta: ${error.message}`);
+      console.error("Erro ao excluir conta:", error);
+    }
+  };
+
   return {
     accounts,
     isLoading,
     fetchAccounts,
-    addAccount
+    addAccount,
+    updateAccount,
+    deleteAccount
   };
 };

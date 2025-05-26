@@ -11,12 +11,20 @@ import { AccountForm } from "@/components/accounts/AccountForm";
 import { useAccounts } from "@/hooks/useAccounts";
 
 export default function Accounts() {
-  const { accounts, isLoading, addAccount } = useAccounts();
+  const { accounts, isLoading, addAccount, updateAccount, deleteAccount } = useAccounts();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleAddAccount = async (data: Omit<Account, "id">) => {
     await addAccount(data);
     setIsDialogOpen(false);
+  };
+
+  const handleEditAccount = async (accountId: string, data: Omit<Account, "id">) => {
+    await updateAccount(accountId, data);
+  };
+
+  const handleDeleteAccount = async (accountId: string) => {
+    await deleteAccount(accountId);
   };
 
   return (
@@ -45,7 +53,11 @@ export default function Accounts() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sob-blue"></div>
           </div>
         ) : (
-          <AccountList accounts={accounts} />
+          <AccountList 
+            accounts={accounts} 
+            onEdit={handleEditAccount}
+            onDelete={handleDeleteAccount}
+          />
         )}
       </main>
       

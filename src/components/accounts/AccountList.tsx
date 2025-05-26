@@ -15,12 +15,15 @@ import {
   TabsContent 
 } from "@/components/ui/tabs";
 import { CreditCard, Wallet } from "lucide-react";
+import { AccountActions } from "./AccountActions";
 
 type AccountListProps = {
   accounts: Account[];
+  onEdit: (accountId: string, data: Omit<Account, "id">) => void;
+  onDelete: (accountId: string) => void;
 };
 
-export function AccountList({ accounts }: AccountListProps) {
+export function AccountList({ accounts, onEdit, onDelete }: AccountListProps) {
   const [activeTab, setActiveTab] = useState("all");
   
   const filteredAccounts = accounts.filter(account => {
@@ -109,12 +112,19 @@ export function AccountList({ accounts }: AccountListProps) {
         <TabsContent value={activeTab} className="mt-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredAccounts.map((account) => (
-              <Card key={account.id} className="overflow-hidden">
+              <Card key={account.id} className="overflow-hidden relative">
+                <div className="absolute top-4 right-4">
+                  <AccountActions 
+                    account={account}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                </div>
                 <div
                   className="h-1"
                   style={{ backgroundColor: account.color || "#3b82f6" }}
                 />
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 pr-12">
                   <CardTitle>{account.name}</CardTitle>
                   <CardDescription>
                     {account.lastFourDigits ? `**** ${account.lastFourDigits}` : ''} - {getAccountTypeLabel(account.type)}
