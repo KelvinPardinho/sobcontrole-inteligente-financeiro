@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -47,6 +49,8 @@ type AccountFormProps = {
 
 export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
   const [accountType, setAccountType] = useState<AccountType>(initialData?.type || "checking");
+  const [creditCardUsage, setCreditCardUsage] = useState<number>(0);
+  const { session } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,6 +60,55 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
       color: "#3b82f6",
     },
   });
+
+  const limit = form.watch("limit");
+
+  useEffect(() => {
+    if (initialData?.type === "credit_card" && initialData?.id) {
+      calculateCreditCardUsage(initialData.id as string);
+    }
+  }, [initialData]);
+
+  const calculateCreditCardUsage = async (accountId: string) => {
+    if (!session?.user) return;
+
+    try {
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('account_id', accountId)
+        .eq('user_id', session.user.id)
+        .eq('type', 'expense');
+
+      if (error) throw error;
+
+      let totalUsed = 0;
+      
+      if (transactions) {
+        transactions.forEach(transaction => {
+          if (!transaction.installment_total || transaction.installment_total <= 1) {
+            // Compra à vista
+            totalUsed += Number(transaction.amount);
+          } else {
+            // Compra parcelada - somar valor total se ainda há parcelas em aberto
+            const purchaseDate = new Date(transaction.date);
+            const today = new Date();
+            const monthsElapsed = Math.floor((today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+            const currentInstallment = Math.min(Math.max(monthsElapsed + 1, 1), transaction.installment_total);
+            
+            if (currentInstallment < transaction.installment_total || !transaction.installment_paid) {
+              // Ainda há parcelas em aberto, incluir no limite usado
+              totalUsed += Number(transaction.amount) * transaction.installment_total;
+            }
+          }
+        });
+      }
+
+      setCreditCardUsage(totalUsed);
+    } catch (error) {
+      console.error("Erro ao calcular uso do cartão:", error);
+    }
+  };
 
   function handleSubmit(data: z.infer<typeof formSchema>) {
     onSubmit(data as Omit<Account, "id">);
@@ -173,7 +226,7 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
               name="limit"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Limite</FormLabel>
+                  <FormLabel>Limite Total</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -187,6 +240,30 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
                 </FormItem>
               )}
             />
+
+            {/* Mostrar informações do cartão de crédito */}
+            {(limit || initialData?.limit) && (
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2">
+                <h3 className="font-medium text-sm">Informações do Cartão</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Limite Total:</span>
+                    <p className="font-medium">R$ {(limit || initialData?.limit || 0).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Limite Disponível:</span>
+                    <p className="font-medium text-green-600">
+                      R$ {((limit || initialData?.limit || 0) - creditCardUsage).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+                {creditCardUsage > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    Valor usado: R$ {creditCardUsage.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
