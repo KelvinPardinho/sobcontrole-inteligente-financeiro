@@ -45,7 +45,7 @@ const formSchema = z.object({
 type AccountFormProps = {
   onSubmit: (data: Omit<Account, "id">) => void;
   initialData?: Omit<Account, "id">;
-  accountId?: string; // Add this to pass the account ID when editing
+  accountId?: string;
 };
 
 export function AccountForm({ onSubmit, initialData, accountId }: AccountFormProps) {
@@ -91,7 +91,7 @@ export function AccountForm({ onSubmit, initialData, accountId }: AccountFormPro
             // Compra à vista
             totalUsed += Number(transaction.amount);
           } else {
-            // Compra parcelada - somar valor total se ainda há parcelas em aberto
+            // Compra parcelada - somar apenas as parcelas não pagas
             const purchaseDate = new Date(transaction.date);
             const today = new Date();
             const monthsElapsed = Math.floor((today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
@@ -99,7 +99,9 @@ export function AccountForm({ onSubmit, initialData, accountId }: AccountFormPro
             
             if (currentInstallment < transaction.installment_total || !transaction.installment_paid) {
               // Ainda há parcelas em aberto, incluir no limite usado
-              totalUsed += Number(transaction.amount) * transaction.installment_total;
+              const installmentAmount = Number(transaction.amount) / transaction.installment_total;
+              const remainingInstallments = transaction.installment_total - (transaction.installment_paid ? transaction.installment_total : currentInstallment - 1);
+              totalUsed += installmentAmount * remainingInstallments;
             }
           }
         });
@@ -190,7 +192,7 @@ export function AccountForm({ onSubmit, initialData, accountId }: AccountFormPro
               <FormControl>
                 <div className="flex items-center gap-2">
                   <Input type="color" className="w-12 h-10 p-1" {...field} />
-                  <span className="text-sm">Cor de identificação</span>
+                  <span className="text-sm text-muted-foreground">Cor de identificação</span>
                 </div>
               </FormControl>
               <FormMessage />
@@ -242,25 +244,35 @@ export function AccountForm({ onSubmit, initialData, accountId }: AccountFormPro
               )}
             />
 
-            {/* Mostrar informações do cartão de crédito */}
             {(limit || initialData?.limit) && (
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2">
+              <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                 <h3 className="font-medium text-sm">Informações do Cartão</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Limite Total:</span>
-                    <p className="font-medium">R$ {(limit || initialData?.limit || 0).toFixed(2)}</p>
+                    <p className="font-medium">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      }).format(limit || initialData?.limit || 0)}
+                    </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Limite Disponível:</span>
                     <p className="font-medium text-green-600">
-                      R$ {((limit || initialData?.limit || 0) - creditCardUsage).toFixed(2)}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      }).format((limit || initialData?.limit || 0) - creditCardUsage)}
                     </p>
                   </div>
                 </div>
                 {creditCardUsage > 0 && (
                   <div className="text-xs text-muted-foreground">
-                    Valor usado: R$ {creditCardUsage.toFixed(2)}
+                    Valor usado: {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(creditCardUsage)}
                   </div>
                 )}
               </div>

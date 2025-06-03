@@ -18,27 +18,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { AccountForm } from "./AccountForm";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 
 type AccountActionsProps = {
   account: Account;
-  onEdit: (accountId: string, data: Omit<Account, "id">) => void;
-  onDelete: (accountId: string) => void;
+  onEdit: () => void;
+  onDelete: () => void;
 };
 
 export function AccountActions({ account, onEdit, onDelete }: AccountActionsProps) {
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const handleEdit = (data: Omit<Account, "id">) => {
-    onEdit(account.id, data);
-    setIsEditDialogOpen(false);
-  };
-
   const handleDelete = () => {
-    onDelete(account.id);
+    onDelete();
     setIsDeleteDialogOpen(false);
   };
 
@@ -52,7 +44,7 @@ export function AccountActions({ account, onEdit, onDelete }: AccountActionsProp
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+          <DropdownMenuItem onClick={onEdit}>
             <Edit className="mr-2 h-4 w-4" />
             Editar
           </DropdownMenuItem>
@@ -65,24 +57,6 @@ export function AccountActions({ account, onEdit, onDelete }: AccountActionsProp
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <AccountForm 
-            onSubmit={handleEdit} 
-            initialData={{
-              name: account.name,
-              type: account.type,
-              lastFourDigits: account.lastFourDigits,
-              color: account.color,
-              balance: account.balance,
-              limit: account.limit,
-              dueDay: account.dueDay,
-              closingDay: account.closingDay
-            }}
-          />
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
