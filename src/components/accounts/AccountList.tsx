@@ -90,12 +90,20 @@ export function AccountList({ accounts, onEdit, onDelete }: AccountListProps) {
                 )}
                 
                 {account.type === "credit_card" ? (
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Limite disponível:</span>
-                      <span className="font-semibold text-green-600">
-                        {formatCurrency(account.limit || 0)}
-                      </span>
+                  <div className="space-y-2">
+                    <div className="bg-muted/30 p-3 rounded-lg space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Limite total:</span>
+                        <span className="font-semibold text-blue-600">
+                          {formatCurrency(account.limit || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Limite disponível:</span>
+                        <span className="font-semibold text-green-600">
+                          {formatCurrency(account.limit || 0)}
+                        </span>
+                      </div>
                     </div>
                     {account.dueDay && (
                       <p className="text-xs text-muted-foreground">
