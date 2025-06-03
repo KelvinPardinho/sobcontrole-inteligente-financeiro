@@ -45,9 +45,10 @@ const formSchema = z.object({
 type AccountFormProps = {
   onSubmit: (data: Omit<Account, "id">) => void;
   initialData?: Omit<Account, "id">;
+  accountId?: string; // Add this to pass the account ID when editing
 };
 
-export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
+export function AccountForm({ onSubmit, initialData, accountId }: AccountFormProps) {
   const [accountType, setAccountType] = useState<AccountType>(initialData?.type || "checking");
   const [creditCardUsage, setCreditCardUsage] = useState<number>(0);
   const { session } = useAuth();
@@ -64,19 +65,19 @@ export function AccountForm({ onSubmit, initialData }: AccountFormProps) {
   const limit = form.watch("limit");
 
   useEffect(() => {
-    if (initialData?.type === "credit_card" && initialData?.id) {
-      calculateCreditCardUsage(initialData.id as string);
+    if (initialData?.type === "credit_card" && accountId) {
+      calculateCreditCardUsage(accountId);
     }
-  }, [initialData]);
+  }, [initialData, accountId]);
 
-  const calculateCreditCardUsage = async (accountId: string) => {
+  const calculateCreditCardUsage = async (accountIdParam: string) => {
     if (!session?.user) return;
 
     try {
       const { data: transactions, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('account_id', accountId)
+        .eq('account_id', accountIdParam)
         .eq('user_id', session.user.id)
         .eq('type', 'expense');
 
