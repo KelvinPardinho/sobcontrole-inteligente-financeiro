@@ -31,12 +31,12 @@ export function AccountList({ accounts, onEdit, onDelete }: AccountListProps) {
     return account.type === activeTab;
   });
 
-  // Calculate totals
+  // Calculate totals with updated balances
   const bankTotal = accounts
     .filter(account => account.type === "checking" || account.type === "savings")
     .reduce((total, account) => total + (account.balance || 0), 0);
     
-  const creditLimit = accounts
+  const creditAvailable = accounts
     .filter(account => account.type === "credit_card")
     .reduce((total, account) => total + (account.limit || 0), 0);
 
@@ -70,10 +70,10 @@ export function AccountList({ accounts, onEdit, onDelete }: AccountListProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center">
               <Wallet className="mr-2 h-5 w-5" />
-              Saldo em Contas
+              Saldo Atualizado em Contas
             </CardTitle>
             <CardDescription>
-              Total em contas bancárias
+              Total em contas bancárias (incluindo transações)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -87,15 +87,15 @@ export function AccountList({ accounts, onEdit, onDelete }: AccountListProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center">
               <CreditCard className="mr-2 h-5 w-5" />
-              Limite de Crédito
+              Limite Disponível
             </CardTitle>
             <CardDescription>
-              Soma dos limites de cartões
+              Limite disponível nos cartões de crédito
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {creditLimit.toFixed(2)}
+              R$ {creditAvailable.toFixed(2)}
             </div>
           </CardContent>
         </Card>
@@ -134,8 +134,8 @@ export function AccountList({ accounts, onEdit, onDelete }: AccountListProps) {
                   {account.type === "credit_card" ? (
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Limite:</span>
-                        <span className="font-medium">R$ {account.limit?.toFixed(2) || '0.00'}</span>
+                        <span className="text-sm text-muted-foreground">Limite Disponível:</span>
+                        <span className="font-medium text-green-600">R$ {account.limit?.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Vencimento:</span>
@@ -147,8 +147,13 @@ export function AccountList({ accounts, onEdit, onDelete }: AccountListProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-xl font-bold">
-                      R$ {account.balance?.toFixed(2) || '0.00'}
+                    <div className="space-y-2">
+                      <div className="text-xl font-bold">
+                        R$ {account.balance?.toFixed(2) || '0.00'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Saldo atualizado
+                      </div>
                     </div>
                   )}
                 </CardContent>

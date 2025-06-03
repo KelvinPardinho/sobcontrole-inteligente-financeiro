@@ -150,7 +150,7 @@ export const useTransactions = () => {
         date: data.date,
         description: data.description,
         category_id: data.category,
-        account_id: data.accountId, // Agora incluindo account_id
+        account_id: data.accountId,
         installment_total: data.installments > 1 ? data.installments : null,
         installment_current: data.installments > 1 ? 1 : null,
       };
@@ -171,6 +171,10 @@ export const useTransactions = () => {
         
         // After successful insert, refresh all transaction data
         await fetchTransactions();
+        
+        // Trigger accounts refresh by dispatching a custom event
+        window.dispatchEvent(new CustomEvent('accountsNeedRefresh'));
+        
         return true;
       }
       

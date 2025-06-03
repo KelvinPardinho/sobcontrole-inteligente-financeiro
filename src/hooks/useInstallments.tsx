@@ -105,6 +105,9 @@ export const useInstallments = () => {
       
       // Refresh installments list
       await fetchInstallments();
+      
+      // Trigger accounts refresh by dispatching a custom event
+      window.dispatchEvent(new CustomEvent('accountsNeedRefresh'));
     } catch (error: any) {
       toast.error(`Erro ao atualizar status da parcela: ${error.message}`);
       console.error("Erro ao atualizar status da parcela:", error);

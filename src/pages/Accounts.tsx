@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainNav } from "@/components/MainNav";
 import { FooterSection } from "@/components/FooterSection";
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,21 @@ import { AccountForm } from "@/components/accounts/AccountForm";
 import { useAccounts } from "@/hooks/useAccounts";
 
 export default function Accounts() {
-  const { accounts, isLoading, addAccount, updateAccount, deleteAccount } = useAccounts();
+  const { accounts, isLoading, addAccount, updateAccount, deleteAccount, fetchAccounts } = useAccounts();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Listen for accounts refresh events from other components
+  useEffect(() => {
+    const handleAccountsRefresh = () => {
+      fetchAccounts();
+    };
+
+    window.addEventListener('accountsNeedRefresh', handleAccountsRefresh);
+    
+    return () => {
+      window.removeEventListener('accountsNeedRefresh', handleAccountsRefresh);
+    };
+  }, [fetchAccounts]);
 
   const handleAddAccount = async (data: Omit<Account, "id">) => {
     await addAccount(data);
