@@ -142,11 +142,14 @@ export const useTransactions = () => {
     }
 
     try {
+      // Para compras parceladas, calcular o valor da parcela
+      const installmentAmount = data.installments > 1 ? data.amount / data.installments : data.amount;
+      
       // Preparar dados da transação
       const newTransactionData = {
         user_id: session.user.id,
         type: data.type,
-        amount: data.amount,
+        amount: installmentAmount, // Valor da parcela (total dividido pelas parcelas)
         date: data.date,
         description: data.description,
         category_id: data.category,
@@ -156,6 +159,9 @@ export const useTransactions = () => {
       };
 
       console.log("Enviando transação para o banco:", newTransactionData);
+      console.log("Valor total da compra:", data.amount);
+      console.log("Número de parcelas:", data.installments);
+      console.log("Valor por parcela:", installmentAmount);
 
       // Inserir no banco de dados
       const { data: insertedData, error } = await supabase

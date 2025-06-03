@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -65,6 +64,8 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
   
   const type = watch("type");
   const isInstallment = watch("isInstallment");
+  const amount = watch("amount");
+  const installments = watch("installments");
 
   useEffect(() => {
     fetchUserCategories();
@@ -126,10 +127,19 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
     return types[type] || type;
   };
 
+  // Calcular valor da parcela para exibição
+  const getInstallmentValue = () => {
+    if (!isInstallment || !amount || !installments) return null;
+    const totalAmount = parseFloat(amount);
+    const installmentCount = parseInt(installments);
+    if (isNaN(totalAmount) || isNaN(installmentCount) || installmentCount === 0) return null;
+    return (totalAmount / installmentCount).toFixed(2);
+  };
+
   const submitForm = (values: TransactionFormValues) => {
     const formattedData = {
       ...values,
-      amount: parseFloat(values.amount),
+      amount: parseFloat(values.amount), // Manter o valor total
       installments: parseInt(values.installments) || 1
     };
     
@@ -173,7 +183,9 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Valor (R$)</Label>
+              <Label htmlFor="amount">
+                {isInstallment ? "Valor Total da Compra (R$)" : "Valor (R$)"}
+              </Label>
               <Input
                 id="amount"
                 type="number"
@@ -183,6 +195,11 @@ export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps)
               />
               {errors.amount && (
                 <p className="text-red-500 text-xs">Valor é obrigatório</p>
+              )}
+              {isInstallment && getInstallmentValue() && (
+                <p className="text-sm text-muted-foreground">
+                  Valor por parcela: R$ {getInstallmentValue()}
+                </p>
               )}
             </div>
 
