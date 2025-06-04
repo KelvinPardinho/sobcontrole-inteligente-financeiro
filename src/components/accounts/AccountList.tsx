@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Account } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,7 +94,7 @@ export function AccountList({ accounts, onEdit, onDelete }: AccountListProps) {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Limite total:</span>
                         <span className="font-semibold text-blue-600">
-                          {formatCurrency(account.limit || 0)}
+                          {formatCurrency(account.totalLimit || 0)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">

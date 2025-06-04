@@ -83,15 +83,17 @@ export const useAccounts = () => {
             // Compra à vista
             totalUsed += Number(transaction.amount);
           } else {
-            // Compra parcelada - somar valor total se ainda há parcelas em aberto
+            // Compra parcelada - somar apenas as parcelas futuras
             const purchaseDate = new Date(transaction.date);
             const today = new Date();
             const monthsElapsed = Math.floor((today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
             const currentInstallment = Math.min(Math.max(monthsElapsed + 1, 1), transaction.installment_total);
             
-            if (currentInstallment < transaction.installment_total || !transaction.installment_paid) {
+            if (currentInstallment <= transaction.installment_total && !transaction.installment_paid) {
               // Ainda há parcelas em aberto, incluir no limite usado
-              totalUsed += Number(transaction.amount) * transaction.installment_total;
+              const installmentAmount = Number(transaction.amount) / transaction.installment_total;
+              const remainingInstallments = transaction.installment_total - (currentInstallment - 1);
+              totalUsed += installmentAmount * remainingInstallments;
             }
           }
         });
@@ -128,12 +130,14 @@ export const useAccounts = () => {
         const formattedAccounts: Account[] = await Promise.all(
           data.map(async (account) => {
             let calculatedBalance = account.balance ? Number(account.balance) : 0;
-            let availableLimit = account.credit_limit ? Number(account.credit_limit) : 0;
+            let totalLimit = account.credit_limit ? Number(account.credit_limit) : 0;
+            let availableLimit = totalLimit;
 
             if (account.type === 'credit_card') {
               // Para cartões de crédito, calcular limite disponível
               const usedAmount = await calculateCreditCardUsage(account.id);
-              availableLimit = (account.credit_limit ? Number(account.credit_limit) : 0) - usedAmount;
+              availableLimit = totalLimit - usedAmount;
+              console.log(`Cartão ${account.name}: Limite total: ${totalLimit}, Usado: ${usedAmount}, Disponível: ${availableLimit}`);
             } else {
               // Para contas bancárias, calcular saldo atualizado
               calculatedBalance = await calculateAccountBalance(account.id, account.balance ? Number(account.balance) : 0);
@@ -147,6 +151,7 @@ export const useAccounts = () => {
               color: account.color || undefined,
               balance: calculatedBalance,
               limit: account.type === 'credit_card' ? availableLimit : account.credit_limit ? Number(account.credit_limit) : undefined,
+              totalLimit: account.type === 'credit_card' ? totalLimit : undefined,
               dueDay: account.due_day || undefined,
               closingDay: account.closing_day || undefined
             };

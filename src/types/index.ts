@@ -1,4 +1,3 @@
-
 export type Plan = 'free' | 'gold' | 'platinum';
 
 export type AccountType = 'checking' | 'savings' | 'credit_card' | 'investment' | 'other';
@@ -10,9 +9,10 @@ export interface Account {
   lastFourDigits?: string;
   color?: string;
   balance?: number;
-  dueDay?: number; // For credit cards
-  closingDay?: number; // For credit cards
-  limit?: number; // For credit cards
+  limit?: number;
+  totalLimit?: number; // Novo campo para armazenar o limite total do cartão
+  dueDay?: number;
+  closingDay?: number;
 }
 
 export interface Transaction {
