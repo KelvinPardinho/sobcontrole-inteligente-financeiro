@@ -21,12 +21,12 @@ export interface ReportData {
 }
 
 export function useReports(dateRange?: { from: Date; to: Date }) {
-  const { user } = useAuth();
+  const { session } = useAuth();
 
   return useQuery({
-    queryKey: ['reports', user?.id, dateRange],
+    queryKey: ['reports', session?.user?.id, dateRange],
     queryFn: async (): Promise<ReportData> => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!session?.user?.id) throw new Error('User not authenticated');
 
       const startDate = dateRange?.from || startOfMonth(new Date());
       const endDate = dateRange?.to || endOfMonth(new Date());
@@ -41,7 +41,7 @@ export function useReports(dateRange?: { from: Date; to: Date }) {
             color
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', session.user.id)
         .gte('date', format(startDate, 'yyyy-MM-dd'))
         .lte('date', format(endDate, 'yyyy-MM-dd'));
 
@@ -112,6 +112,6 @@ export function useReports(dateRange?: { from: Date; to: Date }) {
         monthlyData
       };
     },
-    enabled: !!user?.id,
+    enabled: !!session?.user?.id,
   });
 }

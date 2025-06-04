@@ -21,7 +21,7 @@ interface ReportFiltersProps {
 }
 
 export function ReportFilters({ onFilterChange, dateRange, setDateRange }: ReportFiltersProps) {
-  const { data: categories } = useCategories();
+  const { categories } = useCategories();
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
     if (range) {

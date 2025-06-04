@@ -16,7 +16,13 @@ export default function Reports() {
     to: new Date()
   });
 
-  const { data: reportData, isLoading, error } = useReports(dateRange);
+  // Criar um objeto com from e to garantidos para o useReports
+  const reportDateRange = dateRange?.from && dateRange?.to ? {
+    from: dateRange.from,
+    to: dateRange.to
+  } : undefined;
+
+  const { data: reportData, isLoading, error } = useReports(reportDateRange);
 
   const handleFilterChange = (newFilters: any) => {
     if (newFilters.dateRange) {
