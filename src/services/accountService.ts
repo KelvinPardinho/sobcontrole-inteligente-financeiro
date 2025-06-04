@@ -18,12 +18,12 @@ export const formatAccountData = async (accountData: any[], userId: string): Pro
   return Promise.all(
     accountData.map(async (account) => {
       let calculatedBalance = account.balance ? Number(account.balance) : 0;
-      let totalLimit = account.credit_limit ? Number(account.credit_limit) : 0;
-      let availableLimit = totalLimit;
+      let totalLimit = account.credit_limit ? Number(account.credit_limit) : undefined;
+      let availableLimit = undefined;
 
       if (account.type === 'credit_card') {
         const usedAmount = await calculateCreditCardUsage(account.id, userId, supabase);
-        availableLimit = totalLimit - usedAmount;
+        availableLimit = totalLimit ? totalLimit - usedAmount : 0;
         console.log(`Cartão ${account.name}: Limite total: ${totalLimit}, Usado: ${usedAmount}, Disponível: ${availableLimit}`);
       } else {
         calculatedBalance = await calculateAccountBalance(account.id, userId, account.balance ? Number(account.balance) : 0, supabase);
@@ -36,7 +36,7 @@ export const formatAccountData = async (accountData: any[], userId: string): Pro
         lastFourDigits: account.last_four_digits || undefined,
         color: account.color || undefined,
         balance: calculatedBalance,
-        limit: account.type === 'credit_card' ? availableLimit : account.credit_limit ? Number(account.credit_limit) : undefined,
+        limit: account.type === 'credit_card' ? availableLimit : (account.credit_limit ? Number(account.credit_limit) : undefined),
         totalLimit: account.type === 'credit_card' ? totalLimit : undefined,
         dueDay: account.due_day || undefined,
         closingDay: account.closing_day || undefined

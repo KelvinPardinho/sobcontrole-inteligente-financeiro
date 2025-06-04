@@ -14,7 +14,8 @@ export function CreditCardInfo({ account, creditCardUsage }: CreditCardInfoProps
     }).format(value);
   };
 
-  const limit = account.limit || account.totalLimit || 0;
+  const totalLimit = account.totalLimit || 0;
+  const availableLimit = account.limit || 0;
 
   return (
     <div className="bg-muted/50 p-4 rounded-lg space-y-3">
@@ -23,13 +24,13 @@ export function CreditCardInfo({ account, creditCardUsage }: CreditCardInfoProps
         <div>
           <span className="text-muted-foreground">Limite Total:</span>
           <p className="font-medium">
-            {formatCurrency(account.totalLimit || limit)}
+            {formatCurrency(totalLimit)}
           </p>
         </div>
         <div>
           <span className="text-muted-foreground">Limite Disponível:</span>
           <p className="font-medium text-green-600">
-            {formatCurrency((account.totalLimit || limit) - creditCardUsage)}
+            {formatCurrency(availableLimit)}
           </p>
         </div>
       </div>

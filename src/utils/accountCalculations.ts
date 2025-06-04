@@ -65,19 +65,18 @@ export const calculateCreditCardUsage = async (
     
     if (transactions) {
       transactions.forEach(transaction => {
+        if (transaction.installment_paid) {
+          // Se a parcela está marcada como paga, não conta no uso atual do cartão
+          return;
+        }
+        
         if (!transaction.installment_total || transaction.installment_total <= 1) {
+          // Compra à vista
           totalUsed += Number(transaction.amount);
         } else {
-          const purchaseDate = new Date(transaction.date);
-          const today = new Date();
-          const monthsElapsed = Math.floor((today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
-          const currentInstallment = Math.min(Math.max(monthsElapsed + 1, 1), transaction.installment_total);
-          
-          if (currentInstallment <= transaction.installment_total && !transaction.installment_paid) {
-            const installmentAmount = Number(transaction.amount) / transaction.installment_total;
-            const remainingInstallments = transaction.installment_total - (currentInstallment - 1);
-            totalUsed += installmentAmount * remainingInstallments;
-          }
+          // Compra parcelada - conta o valor total restante das parcelas não pagas
+          const totalAmount = Number(transaction.amount) * transaction.installment_total;
+          totalUsed += totalAmount;
         }
       });
     }
