@@ -29,6 +29,8 @@ export function DashboardSummary({ stats }: DashboardSummaryProps) {
   // Calculate upcoming expense percentage of total balance
   const upcomingPercentage = balance > 0 ? (upcomingExpenses / balance) * 100 : 0;
 
+  const totalMovements = incomeTotal + expenseTotal;
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <Card className="col-span-full">
@@ -42,7 +44,7 @@ export function DashboardSummary({ stats }: DashboardSummaryProps) {
               <p className="text-sm font-medium text-muted-foreground">
                 Saldo atual
               </p>
-              <p className="text-2xl font-bold text-sob-blue">
+              <p className={`text-2xl font-bold ${balance >= 0 ? 'text-sob-green' : 'text-destructive'}`}>
                 {formatCurrency(balance)}
               </p>
             </div>
@@ -66,44 +68,46 @@ export function DashboardSummary({ stats }: DashboardSummaryProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Despesas por Categoria</CardTitle>
-          <CardDescription>
-            Distribuição das suas despesas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  paddingAngle={1}
-                  dataKey="value"
-                  label={({ name }) => name}
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: number) => formatCurrency(value)}
-                  labelFormatter={(name) => `Categoria: ${name}`}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      {chartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Despesas por Categoria</CardTitle>
+            <CardDescription>
+              Distribuição das suas despesas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    paddingAngle={1}
+                    dataKey="value"
+                    label={({ name }) => name}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number) => formatCurrency(value)}
+                    labelFormatter={(name) => `Categoria: ${name}`}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -118,7 +122,7 @@ export function DashboardSummary({ stats }: DashboardSummaryProps) {
                 <p className="text-sm font-medium">{formatCurrency(incomeTotal)}</p>
               </div>
               <Progress
-                value={incomeTotal / (incomeTotal + expenseTotal) * 100}
+                value={totalMovements > 0 ? (incomeTotal / totalMovements) * 100 : 0}
                 className="h-2 bg-gray-200"
                 indicatorClassName="bg-sob-green"
               />
@@ -129,7 +133,7 @@ export function DashboardSummary({ stats }: DashboardSummaryProps) {
                 <p className="text-sm font-medium">{formatCurrency(expenseTotal)}</p>
               </div>
               <Progress
-                value={expenseTotal / (incomeTotal + expenseTotal) * 100}
+                value={totalMovements > 0 ? (expenseTotal / totalMovements) * 100 : 0}
                 className="h-2 bg-gray-200"
                 indicatorClassName="bg-destructive"
               />

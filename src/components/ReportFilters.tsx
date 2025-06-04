@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCategories } from "@/hooks/useCategories";
 
 interface ReportFiltersProps {
   onFilterChange: (filters: any) => void;
@@ -20,6 +21,8 @@ interface ReportFiltersProps {
 }
 
 export function ReportFilters({ onFilterChange, dateRange, setDateRange }: ReportFiltersProps) {
+  const { data: categories } = useCategories();
+
   const handleDateRangeChange = (range: DateRange | undefined) => {
     if (range) {
       setDateRange(range);
@@ -120,6 +123,7 @@ export function ReportFilters({ onFilterChange, dateRange, setDateRange }: Repor
                   selected={dateRange}
                   onSelect={handleDateRangeChange}
                   numberOfMonths={2}
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -150,14 +154,11 @@ export function ReportFilters({ onFilterChange, dateRange, setDateRange }: Repor
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="1">Alimentação</SelectItem>
-              <SelectItem value="2">Transporte</SelectItem>
-              <SelectItem value="3">Moradia</SelectItem>
-              <SelectItem value="4">Educação</SelectItem>
-              <SelectItem value="5">Lazer</SelectItem>
-              <SelectItem value="6">Saúde</SelectItem>
-              <SelectItem value="7">Salário</SelectItem>
-              <SelectItem value="8">Investimentos</SelectItem>
+              {categories?.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

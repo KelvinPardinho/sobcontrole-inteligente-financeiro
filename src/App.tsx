@@ -15,7 +15,6 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Pricing from "./pages/Pricing";
 import Transactions from "./pages/Transactions";
-import Calendar from "./pages/Calendar";
 import Goals from "./pages/Goals";
 import Import from "./pages/Import";
 import Reports from "./pages/Reports";
@@ -74,7 +73,6 @@ const App = () => {
                 <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
                 <Route path="/installments" element={<ProtectedRoute><Installments /></ProtectedRoute>} />
                 <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
-                <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
                 <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
                 <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />

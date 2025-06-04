@@ -1,6 +1,6 @@
 
-import { Transaction } from "@/types";
 import { formatCurrency } from "@/lib/formatters";
+import { ReportData } from "@/hooks/useReports";
 import {
   Bar,
   BarChart,
@@ -19,62 +19,10 @@ import {
 
 interface ReportChartsProps {
   type: "monthly" | "category" | "comparison";
-  transactions: Transaction[];
+  data: ReportData;
 }
 
-export function ReportCharts({ type, transactions }: ReportChartsProps) {
-  // Mock data para demonstração - em uma aplicação real, isso seria calculado a partir das transações
-  const monthlyData = [
-    { name: "Jan", receitas: 3500, despesas: 2800 },
-    { name: "Fev", receitas: 3500, despesas: 2950 },
-    { name: "Mar", receitas: 3700, despesas: 3100 },
-    { name: "Abr", receitas: 3500, despesas: 2700 },
-    { name: "Mai", receitas: 4500, despesas: 3200 },
-    { name: "Jun", receitas: 3500, despesas: 2900 },
-  ];
-
-  const categoryData = [
-    { name: "Alimentação", valor: 850 },
-    { name: "Transporte", valor: 450 },
-    { name: "Moradia", valor: 1200 },
-    { name: "Educação", valor: 350 },
-    { name: "Lazer", valor: 280 },
-    { name: "Saúde", valor: 180 },
-  ];
-
-  const comparisonData = [
-    {
-      name: "Jan",
-      "Ano Atual": 2800,
-      "Ano Anterior": 2600,
-    },
-    {
-      name: "Fev",
-      "Ano Atual": 2950,
-      "Ano Anterior": 2800,
-    },
-    {
-      name: "Mar",
-      "Ano Atual": 3100,
-      "Ano Anterior": 2900,
-    },
-    {
-      name: "Abr",
-      "Ano Atual": 2700,
-      "Ano Anterior": 3000,
-    },
-    {
-      name: "Mai",
-      "Ano Atual": 3200,
-      "Ano Anterior": 2800,
-    },
-    {
-      name: "Jun",
-      "Ano Atual": 2900,
-      "Ano Anterior": 3100,
-    },
-  ];
-
+export function ReportCharts({ type, data }: ReportChartsProps) {
   // Cores para os gráficos
   const COLORS = ["#4ECDC4", "#FF6B6B", "#A367DC", "#FFA500", "#45B7D1", "#38E54D"];
 
@@ -82,9 +30,9 @@ export function ReportCharts({ type, transactions }: ReportChartsProps) {
     return (
       <div className="h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={monthlyData}>
+          <BarChart data={data.monthlyData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
+            <XAxis dataKey="month" />
             <YAxis 
               tickFormatter={(value) => `R$${value}`}
             />
@@ -92,8 +40,8 @@ export function ReportCharts({ type, transactions }: ReportChartsProps) {
               formatter={(value: number) => formatCurrency(value)}
             />
             <Legend />
-            <Bar dataKey="receitas" fill="#4ECDC4" name="Receitas" />
-            <Bar dataKey="despesas" fill="#FF6B6B" name="Despesas" />
+            <Bar dataKey="income" fill="#4ECDC4" name="Receitas" />
+            <Bar dataKey="expenses" fill="#FF6B6B" name="Despesas" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -101,6 +49,20 @@ export function ReportCharts({ type, transactions }: ReportChartsProps) {
   }
 
   if (type === "category") {
+    const categoryData = data.transactionsByCategory.map(cat => ({
+      name: cat.categoryName,
+      valor: cat.amount,
+      color: cat.color
+    }));
+
+    if (categoryData.length === 0) {
+      return (
+        <div className="h-[400px] flex items-center justify-center">
+          <p className="text-muted-foreground">Nenhuma despesa encontrada no período selecionado</p>
+        </div>
+      );
+    }
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-[400px]">
         <div>
@@ -118,7 +80,7 @@ export function ReportCharts({ type, transactions }: ReportChartsProps) {
                 label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}
               >
                 {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip formatter={(value: number) => formatCurrency(value)} />
@@ -136,7 +98,7 @@ export function ReportCharts({ type, transactions }: ReportChartsProps) {
               <Tooltip formatter={(value: number) => formatCurrency(value)} />
               <Bar dataKey="valor" fill="#8884d8">
                 {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                 ))}
               </Bar>
             </BarChart>
@@ -146,10 +108,16 @@ export function ReportCharts({ type, transactions }: ReportChartsProps) {
     );
   }
 
-  // Comparação
+  // Comparação - ainda usando dados mock por enquanto
+  const comparisonData = data.monthlyData.map((month, index) => ({
+    name: month.month,
+    "Período Atual": month.expenses,
+    "Período Anterior": Math.max(0, month.expenses * (0.8 + Math.random() * 0.4)) // Mock data
+  }));
+
   return (
     <div className="h-[400px]">
-      <h3 className="text-center mb-4 font-medium">Comparativo de Despesas - Ano Atual vs. Anterior</h3>
+      <h3 className="text-center mb-4 font-medium">Comparativo de Despesas - Período Atual vs. Anterior</h3>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={comparisonData}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -157,8 +125,8 @@ export function ReportCharts({ type, transactions }: ReportChartsProps) {
           <YAxis tickFormatter={(value) => `R$${value}`} />
           <Tooltip formatter={(value: number) => formatCurrency(value)} />
           <Legend />
-          <Line type="monotone" dataKey="Ano Atual" stroke="#4ECDC4" strokeWidth={2} dot={{ r: 4 }} />
-          <Line type="monotone" dataKey="Ano Anterior" stroke="#FF6B6B" strokeWidth={2} dot={{ r: 4 }} />
+          <Line type="monotone" dataKey="Período Atual" stroke="#4ECDC4" strokeWidth={2} dot={{ r: 4 }} />
+          <Line type="monotone" dataKey="Período Anterior" stroke="#FF6B6B" strokeWidth={2} dot={{ r: 4 }} />
         </LineChart>
       </ResponsiveContainer>
     </div>

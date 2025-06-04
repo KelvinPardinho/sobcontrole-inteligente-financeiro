@@ -1,92 +1,40 @@
 
 import { useState } from "react";
-import { FooterSection } from "@/components/FooterSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportFilters } from "@/components/ReportFilters";
 import { ReportSummary } from "@/components/ReportSummary";
 import { ReportCharts } from "@/components/ReportCharts";
-import { DashboardStats, Transaction } from "@/types";
+import { useReports } from "@/hooks/useReports";
 import { DateRange } from "react-day-picker";
-
-// Mock data com accountId obrigatório
-const mockTransactions: Transaction[] = [
-  {
-    id: "1",
-    type: "expense",
-    amount: 125.0,
-    date: "2023-06-01",
-    description: "Supermercado",
-    category: "1",
-    accountId: "mock-account-1",
-  },
-  {
-    id: "2",
-    type: "expense",
-    amount: 200.0,
-    date: "2023-06-05",
-    description: "Aluguel",
-    category: "3",
-    accountId: "mock-account-2",
-    installment: {
-      current: 6,
-      total: 12,
-    },
-  },
-  {
-    id: "3",
-    type: "income",
-    amount: 3500.0,
-    date: "2023-06-10",
-    description: "Salário",
-    category: "7",
-    accountId: "mock-account-1",
-  },
-  {
-    id: "4",
-    type: "expense",
-    amount: 89.9,
-    date: "2023-06-15",
-    description: "Internet",
-    category: "3",
-    accountId: "mock-account-2",
-  },
-  {
-    id: "5",
-    type: "expense",
-    amount: 45.0,
-    date: "2023-06-20",
-    description: "Uber",
-    category: "2",
-    accountId: "mock-account-3",
-  },
-];
-
-const mockStats: DashboardStats = {
-  balance: 3040.1,
-  incomeTotal: 3500.0,
-  expenseTotal: 459.9,
-  categorySummary: {
-    "Alimentação": 125.0,
-    "Transporte": 45.0,
-    "Moradia": 289.9,
-  },
-  upcomingExpenses: 1200.0,
-};
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Reports() {
-  const [transactions] = useState<Transaction[]>(mockTransactions);
-  const [stats] = useState<DashboardStats>(mockStats);
   const [reportType, setReportType] = useState<"monthly" | "category" | "comparison">("monthly");
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date()
   });
 
+  const { data: reportData, isLoading, error } = useReports(dateRange);
+
   const handleFilterChange = (newFilters: any) => {
-    // Em uma aplicação real, aqui buscaríamos dados baseados nos filtros
-    console.log("Filtros aplicados:", newFilters);
+    if (newFilters.dateRange) {
+      setDateRange(newFilters.dateRange);
+    }
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-destructive">Erro ao carregar relatórios: {error.message}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -124,7 +72,26 @@ export default function Reports() {
                     <CardTitle>Resumo do Período</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ReportSummary stats={stats} />
+                    {isLoading ? (
+                      <div className="space-y-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                      </div>
+                    ) : reportData ? (
+                      <ReportSummary 
+                        stats={{
+                          balance: reportData.balance,
+                          incomeTotal: reportData.totalIncome,
+                          expenseTotal: reportData.totalExpenses,
+                          categorySummary: reportData.transactionsByCategory.reduce((acc, cat) => {
+                            acc[cat.categoryName] = cat.amount;
+                            return acc;
+                          }, {} as Record<string, number>),
+                          upcomingExpenses: 0 // TODO: Implementar despesas futuras
+                        }}
+                      />
+                    ) : null}
                   </CardContent>
                 </Card>
                 <Card className="md:col-span-2">
@@ -132,7 +99,11 @@ export default function Reports() {
                     <CardTitle>Evolução Mensal</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ReportCharts type="monthly" transactions={transactions} />
+                    {isLoading ? (
+                      <Skeleton className="h-[400px] w-full" />
+                    ) : reportData ? (
+                      <ReportCharts type="monthly" data={reportData} />
+                    ) : null}
                   </CardContent>
                 </Card>
               </div>
@@ -144,7 +115,11 @@ export default function Reports() {
                   <CardTitle>Análise por Categoria</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ReportCharts type="category" transactions={transactions} />
+                  {isLoading ? (
+                    <Skeleton className="h-[400px] w-full" />
+                  ) : reportData ? (
+                    <ReportCharts type="category" data={reportData} />
+                  ) : null}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -155,7 +130,11 @@ export default function Reports() {
                   <CardTitle>Comparação entre Períodos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ReportCharts type="comparison" transactions={transactions} />
+                  {isLoading ? (
+                    <Skeleton className="h-[400px] w-full" />
+                  ) : reportData ? (
+                    <ReportCharts type="comparison" data={reportData} />
+                  ) : null}
                 </CardContent>
               </Card>
             </TabsContent>
