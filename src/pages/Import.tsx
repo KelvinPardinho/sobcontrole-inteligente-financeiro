@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImportExtract } from "@/components/ImportExtract";
 import { ImportReceipt } from "@/components/ImportReceipt";
 import { ExtractedTransactions } from "@/components/ExtractedTransactions";
+import { AccountSelector } from "@/components/AccountSelector";
 import { FileText, Camera, Check, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -26,15 +27,21 @@ export default function Import() {
   const [importType, setImportType] = useState<"extract" | "receipt">("extract");
   const [importStatus, setImportStatus] = useState<"idle" | "processing" | "success" | "error" | "extracted">("idle");
   const [extractedTransactions, setExtractedTransactions] = useState<ExtractedTransaction[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [freeImportsLeft, setFreeImportsLeft] = useState(2);
   const [freeReceiptsLeft, setFreeReceiptsLeft] = useState(5);
   const [errorMessage, setErrorMessage] = useState<string>("");
   
   const { importTransactions } = useTransactions();
-  const { accounts } = useAccounts();
+  const { accounts, isLoading: accountsLoading } = useAccounts();
   const { categories } = useCategories();
 
   const handleFileUpload = async (file: File) => {
+    if (!selectedAccountId) {
+      toast.error("Selecione uma conta antes de fazer a importação");
+      return;
+    }
+
     setImportStatus("processing");
     setErrorMessage("");
     
@@ -50,7 +57,9 @@ export default function Import() {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       ];
       
-      if (!supportedTypes.includes(file.type) && !file.name.toLowerCase().match(/\.(pdf|txt|csv|xls|xlsx)$/)) {
+      const supportedExtensions = /\.(pdf|txt|csv|xls|xlsx)$/i;
+      
+      if (!supportedTypes.includes(file.type) && !supportedExtensions.test(file.name)) {
         throw new Error("Tipo de arquivo não suportado. Use PDF, TXT, CSV ou Excel.");
       }
 
@@ -98,18 +107,16 @@ export default function Import() {
   };
 
   const handleConfirmImport = async (selectedTransactions: ExtractedTransaction[]) => {
-    // Buscar conta padrão (primeira conta ou criar uma se necessário)
-    const defaultAccount = accounts[0];
-    const defaultCategory = categories[0];
-
-    if (!defaultAccount) {
-      toast.error("Você precisa ter pelo menos uma conta cadastrada para importar transações");
+    if (!selectedAccountId) {
+      toast.error("Selecione uma conta para importar as transações");
       return;
     }
 
+    const defaultCategory = categories[0];
+
     const success = await importTransactions(
       selectedTransactions,
-      defaultAccount.id,
+      selectedAccountId,
       defaultCategory?.id
     );
 
@@ -123,6 +130,8 @@ export default function Import() {
     setImportStatus("idle");
     setExtractedTransactions([]);
   };
+
+  const canUpload = selectedAccountId !== null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -151,7 +160,15 @@ export default function Import() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-6">
+            {/* Seletor de conta */}
+            <AccountSelector
+              accounts={accounts}
+              selectedAccountId={selectedAccountId}
+              onAccountChange={setSelectedAccountId}
+              isLoading={accountsLoading}
+            />
+
             {importStatus === "extracted" ? (
               <ExtractedTransactions
                 transactions={extractedTransactions}
@@ -167,7 +184,7 @@ export default function Import() {
                       <p className="text-lg font-medium">Processando seu arquivo...</p>
                       <p className="text-muted-foreground mt-2">
                         {importType === "extract" 
-                          ? "Extraindo transações do extrato bancário" 
+                          ? "Extraindo todas as transações do extrato bancário" 
                           : "Lendo informações do cupom fiscal"}
                       </p>
                     </div>
@@ -203,6 +220,7 @@ export default function Import() {
                         <p>• PDF (extratos e cupons fiscais)</p>
                         <p>• TXT (extratos em texto)</p>
                         <p>• CSV (dados de transações)</p>
+                        <p>• Excel (XLS/XLSX)</p>
                       </div>
                       <Button className="mt-6 bg-sob-blue hover:bg-sob-blue/90" onClick={() => {
                         setImportStatus("idle");
@@ -214,10 +232,24 @@ export default function Import() {
                   </CardContent>
                 ) : (
                   <>
+                    {!canUpload && (
+                      <CardHeader>
+                        <CardTitle className="text-orange-600">Atenção</CardTitle>
+                        <CardDescription>
+                          Selecione uma conta acima antes de fazer a importação do arquivo.
+                        </CardDescription>
+                      </CardHeader>
+                    )}
                     {importType === "extract" ? (
-                      <ImportExtract onFileUpload={handleFileUpload} />
+                      <ImportExtract 
+                        onFileUpload={handleFileUpload} 
+                        disabled={!canUpload}
+                      />
                     ) : (
-                      <ImportReceipt onFileUpload={handleFileUpload} />
+                      <ImportReceipt 
+                        onFileUpload={handleFileUpload}
+                        disabled={!canUpload}
+                      />
                     )}
                   </>
                 )}
@@ -236,7 +268,7 @@ export default function Import() {
                   <p className="mb-2 text-sm font-medium">Importações de extratos</p>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Restantes</span>
-                    <span className="font-medium">{freeImportsLeft} de 2</span>
+                    <span className="font-medium">Ilimitado</span>
                   </div>
                 </div>
                 
@@ -244,13 +276,13 @@ export default function Import() {
                   <p className="mb-2 text-sm font-medium">Leitura de comprovantes (OCR)</p>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Restantes</span>
-                    <span className="font-medium">{freeReceiptsLeft} de 5</span>
+                    <span className="font-medium">Ilimitado</span>
                   </div>
                 </div>
                 
                 <div className="pt-4 border-t">
                   <p className="text-sm text-muted-foreground mb-4">
-                    Aproveite recursos ilimitados de importação atualizando seu plano.
+                    Todas as transações do documento serão importadas automaticamente.
                   </p>
                   <Button className="w-full bg-sob-blue hover:bg-sob-blue/90">
                     Atualizar para Gold
