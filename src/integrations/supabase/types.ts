@@ -110,38 +110,53 @@ export type Database = {
       }
       goals: {
         Row: {
-          budget_limit: number
           category_id: string | null
+          completed_at: string | null
           created_at: string
+          current_amount: number | null
+          description: string | null
           id: string
+          is_completed: boolean | null
           name: string
           notify_at: number | null
-          period: string
-          spent: number | null
+          period: Database["public"]["Enums"]["goal_period"]
+          target_amount: number
+          target_date: string | null
+          type: Database["public"]["Enums"]["goal_type"]
           updated_at: string
           user_id: string
         }
         Insert: {
-          budget_limit: number
           category_id?: string | null
+          completed_at?: string | null
           created_at?: string
+          current_amount?: number | null
+          description?: string | null
           id?: string
+          is_completed?: boolean | null
           name: string
           notify_at?: number | null
-          period: string
-          spent?: number | null
+          period: Database["public"]["Enums"]["goal_period"]
+          target_amount: number
+          target_date?: string | null
+          type: Database["public"]["Enums"]["goal_type"]
           updated_at?: string
           user_id: string
         }
         Update: {
-          budget_limit?: number
           category_id?: string | null
+          completed_at?: string | null
           created_at?: string
+          current_amount?: number | null
+          description?: string | null
           id?: string
+          is_completed?: boolean | null
           name?: string
           notify_at?: number | null
-          period?: string
-          spent?: number | null
+          period?: Database["public"]["Enums"]["goal_period"]
+          target_amount?: number
+          target_date?: string | null
+          type?: Database["public"]["Enums"]["goal_type"]
           updated_at?: string
           user_id?: string
         }
@@ -260,7 +275,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      goal_period: "daily" | "weekly" | "monthly" | "yearly"
+      goal_type: "savings" | "expense"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -375,6 +391,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      goal_period: ["daily", "weekly", "monthly", "yearly"],
+      goal_type: ["savings", "expense"],
+    },
   },
 } as const

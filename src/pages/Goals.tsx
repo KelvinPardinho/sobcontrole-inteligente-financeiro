@@ -5,77 +5,62 @@ import { FooterSection } from "@/components/FooterSection";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GoalForm } from "@/components/GoalForm";
-import { formatCurrency, formatPercentage } from "@/lib/formatters";
-
-interface Goal {
-  id: string;
-  name: string;
-  category: string;
-  limit: number;
-  spent: number;
-  period: "daily" | "weekly" | "monthly" | "yearly";
-  notifyAt: number; // % do limite para alertar
-}
-
-// Mock data para demonstração
-const mockGoals: Goal[] = [
-  {
-    id: "1",
-    name: "Alimentação",
-    category: "1",
-    limit: 800,
-    spent: 650,
-    period: "monthly",
-    notifyAt: 80,
-  },
-  {
-    id: "2",
-    name: "Transporte",
-    category: "2",
-    limit: 300,
-    spent: 290,
-    period: "monthly",
-    notifyAt: 80,
-  },
-  {
-    id: "3",
-    name: "Lazer",
-    category: "5",
-    limit: 400,
-    spent: 250,
-    period: "monthly",
-    notifyAt: 80,
-  }
-];
+import { GoalCard } from "@/components/GoalCard";
+import { useGoals } from "@/hooks/useGoals";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Goals() {
-  const [goals, setGoals] = useState<Goal[]>(mockGoals);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { goals, isLoading, createGoal, updateGoal, deleteGoal, isCreating } = useGoals();
 
   const handleAddGoal = (data: any) => {
-    const newGoal: Goal = {
-      id: `${goals.length + 1}`,
-      name: data.name,
-      category: data.category,
-      limit: data.limit,
-      spent: 0,
-      period: data.period,
-      notifyAt: data.notifyAt,
-    };
-
-    setGoals([...goals, newGoal]);
+    createGoal(data);
     setIsDialogOpen(false);
   };
 
-  const getProgressColor = (spent: number, limit: number) => {
-    const percentage = (spent / limit) * 100;
-    if (percentage < 50) return "bg-green-500";
-    if (percentage < 80) return "bg-yellow-500";
-    return "bg-red-500";
+  const handleUpdateProgress = (goalId: string, newAmount: number) => {
+    updateGoal({
+      id: goalId,
+      updates: { current_amount: newAmount }
+    });
   };
+
+  const handleToggleComplete = (goalId: string, isCompleted: boolean) => {
+    updateGoal({
+      id: goalId,
+      updates: { 
+        is_completed: isCompleted,
+        completed_at: isCompleted ? new Date().toISOString() : null
+      }
+    });
+  };
+
+  const savingsGoals = goals.filter(goal => goal.type === "savings");
+  const expenseGoals = goals.filter(goal => goal.type === "expense");
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <MainNav />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl font-bold">Metas e Alertas</h1>
+            <Button disabled>
+              <Plus className="mr-2 h-4 w-4" /> Nova Meta
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-64 w-full" />
+            ))}
+          </div>
+        </main>
+        <FooterSection />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -90,71 +75,82 @@ export default function Goals() {
                 <Plus className="mr-2 h-4 w-4" /> Nova Meta
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <GoalForm onSubmit={handleAddGoal} />
+            <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+              <GoalForm onSubmit={handleAddGoal} isLoading={isCreating} />
             </DialogContent>
           </Dialog>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {goals.map((goal) => {
-            const percentage = (goal.spent / goal.limit) * 100;
-            const isOverLimit = percentage >= 100;
-            const isNearLimit = percentage >= goal.notifyAt && !isOverLimit;
-            
-            return (
-              <Card key={goal.id} className={`
-                ${isOverLimit ? 'border-red-500 shadow-red-100/50' : ''} 
-                ${isNearLimit ? 'border-yellow-500 shadow-yellow-100/50' : ''}
-              `}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{goal.name}</CardTitle>
-                  <CardDescription>
-                    Meta {goal.period === "monthly" ? "mensal" : 
-                          goal.period === "weekly" ? "semanal" : 
-                          goal.period === "daily" ? "diária" : "anual"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Gasto:</span>
-                      <span className="font-medium">{formatCurrency(goal.spent)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Limite:</span>
-                      <span className="font-medium">{formatCurrency(goal.limit)}</span>
-                    </div>
-                    
-                    <Progress 
-                      value={percentage} 
-                      className="h-2"
-                      indicatorClassName={getProgressColor(goal.spent, goal.limit)}
-                    />
-                    
-                    <div className="flex justify-between items-center text-sm">
-                      <span 
-                        className={`${isOverLimit ? 'text-red-500 font-medium' : 
-                                     isNearLimit ? 'text-yellow-500 font-medium' : 
-                                     'text-muted-foreground'}`}
-                      >
-                        {isOverLimit 
-                          ? 'Limite excedido!' 
-                          : isNearLimit 
-                            ? 'Próximo do limite!' 
-                            : 'Dentro do orçamento'}
-                      </span>
-                      <span className="font-medium">
-                        {formatPercentage(percentage)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full max-w-[400px] grid-cols-3 mb-6">
+            <TabsTrigger value="all">Todas</TabsTrigger>
+            <TabsTrigger value="savings">Economia</TabsTrigger>
+            <TabsTrigger value="expense">Gastos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all">
+            {goals.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nenhuma meta cadastrada ainda.</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Crie sua primeira meta para começar a acompanhar seus objetivos financeiros.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {goals.map((goal) => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onUpdateProgress={handleUpdateProgress}
+                    onDelete={deleteGoal}
+                    onToggleComplete={handleToggleComplete}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="savings">
+            {savingsGoals.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nenhuma meta de economia cadastrada.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {savingsGoals.map((goal) => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onUpdateProgress={handleUpdateProgress}
+                    onDelete={deleteGoal}
+                    onToggleComplete={handleToggleComplete}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="expense">
+            {expenseGoals.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nenhuma meta de gastos cadastrada.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {expenseGoals.map((goal) => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onUpdateProgress={handleUpdateProgress}
+                    onDelete={deleteGoal}
+                    onToggleComplete={handleToggleComplete}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
       
       <FooterSection />
