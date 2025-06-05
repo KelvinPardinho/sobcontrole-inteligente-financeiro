@@ -7,32 +7,94 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImportExtract } from "@/components/ImportExtract";
 import { ImportReceipt } from "@/components/ImportReceipt";
+import { ExtractedTransactions } from "@/components/ExtractedTransactions";
 import { FileText, Camera, Check, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useAccounts } from "@/hooks/useAccounts";
+import { useCategories } from "@/hooks/useCategories";
+import { toast } from "@/components/ui/sonner";
+
+interface ExtractedTransaction {
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  date: string;
+}
 
 export default function Import() {
   const [importType, setImportType] = useState<"extract" | "receipt">("extract");
-  const [importStatus, setImportStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
-  const [freeImportsLeft, setFreeImportsLeft] = useState(2); // Simulando plano grátis
-  const [freeReceiptsLeft, setFreeReceiptsLeft] = useState(5); // Simulando plano grátis
+  const [importStatus, setImportStatus] = useState<"idle" | "processing" | "success" | "error" | "extracted">("idle");
+  const [extractedTransactions, setExtractedTransactions] = useState<ExtractedTransaction[]>([]);
+  const [freeImportsLeft, setFreeImportsLeft] = useState(2);
+  const [freeReceiptsLeft, setFreeReceiptsLeft] = useState(5);
+  
+  const { importTransactions } = useTransactions();
+  const { accounts } = useAccounts();
+  const { categories } = useCategories();
 
-  const handleFileUpload = (file: File) => {
-    // Simular processamento
+  const handleFileUpload = async (file: File) => {
     setImportStatus("processing");
     
-    setTimeout(() => {
-      if (Math.random() > 0.2) { // 80% de chance de sucesso
-        setImportStatus("success");
-        
-        // Reduzir contadores apenas no plano grátis
-        if (importType === "extract") {
-          setFreeImportsLeft(prev => Math.max(0, prev - 1));
-        } else {
-          setFreeReceiptsLeft(prev => Math.max(0, prev - 1));
-        }
+    try {
+      // Criar FormData para enviar o arquivo
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', importType);
+
+      // Chamar edge function para processar o documento
+      const { data, error } = await supabase.functions.invoke('process-document', {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      if (data.success && data.transactions.length > 0) {
+        setExtractedTransactions(data.transactions);
+        setImportStatus("extracted");
+        toast.success(data.message);
       } else {
-        setImportStatus("error");
+        throw new Error("Nenhuma transação foi encontrada no documento");
       }
-    }, 2000);
+
+      // Reduzir contadores apenas no plano grátis
+      if (importType === "extract") {
+        setFreeImportsLeft(prev => Math.max(0, prev - 1));
+      } else {
+        setFreeReceiptsLeft(prev => Math.max(0, prev - 1));
+      }
+    } catch (error: any) {
+      console.error("Erro no processamento:", error);
+      setImportStatus("error");
+      toast.error(`Erro ao processar arquivo: ${error.message}`);
+    }
+  };
+
+  const handleConfirmImport = async (selectedTransactions: ExtractedTransaction[]) => {
+    // Buscar conta padrão (primeira conta ou criar uma se necessário)
+    const defaultAccount = accounts[0];
+    const defaultCategory = categories[0];
+
+    if (!defaultAccount) {
+      toast.error("Você precisa ter pelo menos uma conta cadastrada para importar transações");
+      return;
+    }
+
+    const success = await importTransactions(
+      selectedTransactions,
+      defaultAccount.id,
+      defaultCategory?.id
+    );
+
+    if (success) {
+      setImportStatus("success");
+      setExtractedTransactions([]);
+    }
+  };
+
+  const handleCancelImport = () => {
+    setImportStatus("idle");
+    setExtractedTransactions([]);
   };
 
   return (
@@ -45,6 +107,7 @@ export default function Import() {
           <Tabs defaultValue="extract" onValueChange={(value) => {
             setImportType(value as "extract" | "receipt");
             setImportStatus("idle");
+            setExtractedTransactions([]);
           }}>
             <TabsList>
               <TabsTrigger value="extract">
@@ -61,51 +124,62 @@ export default function Import() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            <Card className="h-full">
-              {importStatus === "processing" ? (
-                <CardContent className="flex flex-col items-center justify-center h-64">
-                  <div className="animate-pulse text-center">
-                    <div className="h-12 w-12 mx-auto rounded-full bg-sob-blue/20 mb-4"></div>
-                    <p className="text-lg font-medium">Processando seu arquivo...</p>
-                    <p className="text-muted-foreground mt-2">Isso pode levar alguns segundos</p>
-                  </div>
-                </CardContent>
-              ) : importStatus === "success" ? (
-                <CardContent className="flex flex-col items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="h-12 w-12 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-4">
-                      <Check className="h-6 w-6 text-green-600" />
+            {importStatus === "extracted" ? (
+              <ExtractedTransactions
+                transactions={extractedTransactions}
+                onConfirm={handleConfirmImport}
+                onCancel={handleCancelImport}
+              />
+            ) : (
+              <Card className="h-full">
+                {importStatus === "processing" ? (
+                  <CardContent className="flex flex-col items-center justify-center h-64">
+                    <div className="animate-pulse text-center">
+                      <div className="h-12 w-12 mx-auto rounded-full bg-sob-blue/20 mb-4"></div>
+                      <p className="text-lg font-medium">Processando seu arquivo...</p>
+                      <p className="text-muted-foreground mt-2">Extraindo informações das transações</p>
                     </div>
-                    <p className="text-lg font-medium">Importação concluída com sucesso!</p>
-                    <p className="text-muted-foreground mt-2">Os dados foram extraídos e estão prontos para revisão</p>
-                    <Button className="mt-6 bg-sob-blue hover:bg-sob-blue/90">
-                      Revisar Dados Importados
-                    </Button>
-                  </div>
-                </CardContent>
-              ) : importStatus === "error" ? (
-                <CardContent className="flex flex-col items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="h-12 w-12 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
-                      <AlertCircle className="h-6 w-6 text-red-600" />
+                  </CardContent>
+                ) : importStatus === "success" ? (
+                  <CardContent className="flex flex-col items-center justify-center h-64">
+                    <div className="text-center">
+                      <div className="h-12 w-12 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-4">
+                        <Check className="h-6 w-6 text-green-600" />
+                      </div>
+                      <p className="text-lg font-medium">Transações importadas com sucesso!</p>
+                      <p className="text-muted-foreground mt-2">As transações foram adicionadas à sua conta</p>
+                      <Button 
+                        className="mt-6 bg-sob-blue hover:bg-sob-blue/90"
+                        onClick={() => window.location.href = "/transactions"}
+                      >
+                        Ver Transações
+                      </Button>
                     </div>
-                    <p className="text-lg font-medium">Erro na importação</p>
-                    <p className="text-muted-foreground mt-2">Não foi possível processar o arquivo. Tente novamente ou use um formato diferente.</p>
-                    <Button className="mt-6 bg-sob-blue hover:bg-sob-blue/90" onClick={() => setImportStatus("idle")}>
-                      Tentar Novamente
-                    </Button>
-                  </div>
-                </CardContent>
-              ) : (
-                <>
-                  {importType === "extract" ? (
-                    <ImportExtract onFileUpload={handleFileUpload} />
-                  ) : (
-                    <ImportReceipt onFileUpload={handleFileUpload} />
-                  )}
-                </>
-              )}
-            </Card>
+                  </CardContent>
+                ) : importStatus === "error" ? (
+                  <CardContent className="flex flex-col items-center justify-center h-64">
+                    <div className="text-center">
+                      <div className="h-12 w-12 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+                        <AlertCircle className="h-6 w-6 text-red-600" />
+                      </div>
+                      <p className="text-lg font-medium">Erro na importação</p>
+                      <p className="text-muted-foreground mt-2">Não foi possível processar o arquivo. Tente novamente ou use um formato diferente.</p>
+                      <Button className="mt-6 bg-sob-blue hover:bg-sob-blue/90" onClick={() => setImportStatus("idle")}>
+                        Tentar Novamente
+                      </Button>
+                    </div>
+                  </CardContent>
+                ) : (
+                  <>
+                    {importType === "extract" ? (
+                      <ImportExtract onFileUpload={handleFileUpload} />
+                    ) : (
+                      <ImportReceipt onFileUpload={handleFileUpload} />
+                    )}
+                  </>
+                )}
+              </Card>
+            )}
           </div>
 
           <div>

@@ -192,11 +192,60 @@ export const useTransactions = () => {
     }
   };
 
+  const importTransactions = async (transactions: any[], defaultAccountId?: string, defaultCategoryId?: string) => {
+    if (!session?.user) {
+      toast.error("Você precisa estar autenticado para importar transações");
+      return false;
+    }
+
+    try {
+      // Preparar transações para inserção
+      const transactionsData = transactions.map(transaction => ({
+        user_id: session.user.id,
+        type: transaction.type,
+        amount: transaction.amount,
+        date: transaction.date,
+        description: transaction.description,
+        category_id: defaultCategoryId || null,
+        account_id: defaultAccountId || '', // Será necessário ter uma conta padrão
+      }));
+
+      console.log("Importando transações:", transactionsData);
+
+      // Inserir todas as transações de uma vez
+      const { data: insertedData, error } = await supabase
+        .from('transactions')
+        .insert(transactionsData)
+        .select();
+
+      if (error) throw error;
+
+      if (insertedData && insertedData.length > 0) {
+        toast.success(`${insertedData.length} transações importadas com sucesso!`);
+        
+        // Atualizar dados após importação
+        await fetchTransactions();
+        
+        // Trigger accounts refresh
+        window.dispatchEvent(new CustomEvent('accountsNeedRefresh'));
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
+      toast.error(`Erro ao importar transações: ${error.message}`);
+      console.error("Erro ao importar transações:", error);
+      return false;
+    }
+  };
+
   return {
     transactions,
     stats,
     isLoading,
     fetchTransactions,
-    addTransaction
+    addTransaction,
+    importTransactions
   };
 };
