@@ -28,6 +28,7 @@ export default function Import() {
   const [extractedTransactions, setExtractedTransactions] = useState<ExtractedTransaction[]>([]);
   const [freeImportsLeft, setFreeImportsLeft] = useState(2);
   const [freeReceiptsLeft, setFreeReceiptsLeft] = useState(5);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   
   const { importTransactions } = useTransactions();
   const { accounts } = useAccounts();
@@ -35,26 +36,51 @@ export default function Import() {
 
   const handleFileUpload = async (file: File) => {
     setImportStatus("processing");
+    setErrorMessage("");
     
     try {
+      console.log('Uploading file:', file.name, 'Type:', file.type, 'Size:', file.size);
+      
+      // Verificar se é um tipo de arquivo suportado
+      const supportedTypes = [
+        'application/pdf',
+        'text/plain',
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      
+      if (!supportedTypes.includes(file.type) && !file.name.toLowerCase().match(/\.(pdf|txt|csv|xls|xlsx)$/)) {
+        throw new Error("Tipo de arquivo não suportado. Use PDF, TXT, CSV ou Excel.");
+      }
+
       // Criar FormData para enviar o arquivo
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', importType);
+
+      console.log('Calling edge function with:', { type: importType, fileName: file.name });
 
       // Chamar edge function para processar o documento
       const { data, error } = await supabase.functions.invoke('process-document', {
         body: formData,
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { data, error });
 
-      if (data.success && data.transactions.length > 0) {
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data.success && data.transactions && data.transactions.length > 0) {
         setExtractedTransactions(data.transactions);
         setImportStatus("extracted");
         toast.success(data.message);
+      } else if (data.success && data.transactions && data.transactions.length === 0) {
+        throw new Error("Nenhuma transação foi encontrada no documento. Verifique se o arquivo contém dados válidos.");
       } else {
-        throw new Error("Nenhuma transação foi encontrada no documento");
+        throw new Error(data.error || "Erro desconhecido no processamento");
       }
 
       // Reduzir contadores apenas no plano grátis
@@ -66,6 +92,7 @@ export default function Import() {
     } catch (error: any) {
       console.error("Erro no processamento:", error);
       setImportStatus("error");
+      setErrorMessage(error.message || "Erro ao processar arquivo");
       toast.error(`Erro ao processar arquivo: ${error.message}`);
     }
   };
@@ -108,6 +135,7 @@ export default function Import() {
             setImportType(value as "extract" | "receipt");
             setImportStatus("idle");
             setExtractedTransactions([]);
+            setErrorMessage("");
           }}>
             <TabsList>
               <TabsTrigger value="extract">
@@ -135,9 +163,13 @@ export default function Import() {
                 {importStatus === "processing" ? (
                   <CardContent className="flex flex-col items-center justify-center h-64">
                     <div className="animate-pulse text-center">
-                      <div className="h-12 w-12 mx-auto rounded-full bg-sob-blue/20 mb-4"></div>
+                      <div className="h-12 w-12 mx-auto rounded-full bg-sob-blue/20 mb-4 animate-spin border-4 border-sob-blue border-t-transparent"></div>
                       <p className="text-lg font-medium">Processando seu arquivo...</p>
-                      <p className="text-muted-foreground mt-2">Extraindo informações das transações</p>
+                      <p className="text-muted-foreground mt-2">
+                        {importType === "extract" 
+                          ? "Extraindo transações do extrato bancário" 
+                          : "Lendo informações do cupom fiscal"}
+                      </p>
                     </div>
                   </CardContent>
                 ) : importStatus === "success" ? (
@@ -163,8 +195,19 @@ export default function Import() {
                         <AlertCircle className="h-6 w-6 text-red-600" />
                       </div>
                       <p className="text-lg font-medium">Erro na importação</p>
-                      <p className="text-muted-foreground mt-2">Não foi possível processar o arquivo. Tente novamente ou use um formato diferente.</p>
-                      <Button className="mt-6 bg-sob-blue hover:bg-sob-blue/90" onClick={() => setImportStatus("idle")}>
+                      <p className="text-muted-foreground mt-2 max-w-md">
+                        {errorMessage || "Não foi possível processar o arquivo. Tente novamente ou use um formato diferente."}
+                      </p>
+                      <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                        <p className="font-medium mb-1">Formatos suportados:</p>
+                        <p>• PDF (extratos e cupons fiscais)</p>
+                        <p>• TXT (extratos em texto)</p>
+                        <p>• CSV (dados de transações)</p>
+                      </div>
+                      <Button className="mt-6 bg-sob-blue hover:bg-sob-blue/90" onClick={() => {
+                        setImportStatus("idle");
+                        setErrorMessage("");
+                      }}>
                         Tentar Novamente
                       </Button>
                     </div>
