@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -26,11 +27,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 
-interface TransactionFormProps {
-  onSubmit: (data: any) => void;
-  initialDate?: string;
-}
-
 interface TransactionFormValues {
   type: "income" | "expense";
   amount: string;
@@ -42,19 +38,30 @@ interface TransactionFormValues {
   isInstallment: boolean;
 }
 
-export function TransactionForm({ onSubmit, initialDate }: TransactionFormProps) {
+interface TransactionFormProps {
+  onSubmit: (data: any) => void;
+  initialDate?: string;
+  initialData?: {
+    type: "income" | "expense";
+    amount: string;
+    description: string;
+    date: string;
+  };
+}
+
+export function TransactionForm({ onSubmit, initialDate, initialData }: TransactionFormProps) {
   const [categories, setCategories] = useState<{ id: string; name: string; color: string }[]>([]);
   const [accounts, setAccounts] = useState<{ id: string; name: string; type: string; lastFourDigits?: string }[]>([]);
   const { session } = useAuth();
   
   const form = useForm<TransactionFormValues>({
     defaultValues: {
-      type: "expense",
-      amount: "",
-      description: "",
+      type: initialData?.type || "expense",
+      amount: initialData?.amount || "",
+      description: initialData?.description || "",
       category: "",
       accountId: "",
-      date: initialDate || new Date().toISOString().split("T")[0],
+      date: initialData?.date || initialDate || new Date().toISOString().split("T")[0],
       installments: "1",
       isInstallment: false
     }
