@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Transaction, DashboardStats } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -246,7 +245,7 @@ export const useTransactions = () => {
     }
   };
 
-  const importTransactions = async (transactions: any[], defaultAccountId?: string) => {
+  const importTransactions = async (transactions: any[], selectedAccountId: string, defaultCategoryId?: string) => {
     if (!session?.user) {
       toast.error("Você precisa estar autenticado para importar transações");
       return false;
@@ -269,7 +268,7 @@ export const useTransactions = () => {
         date: transaction.date,
         description: transaction.description,
         category_id: importCategoryId, // Usar a categoria "Importação"
-        account_id: defaultAccountId || '', // Será necessário ter uma conta padrão
+        account_id: selectedAccountId,
       }));
 
       console.log("Importando transações:", transactionsData);

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MainNav } from "@/components/MainNav";
 import { FooterSection } from "@/components/FooterSection";
@@ -112,12 +111,9 @@ export default function Import() {
       return;
     }
 
-    const defaultCategory = categories[0];
-
     const success = await importTransactions(
       selectedTransactions,
-      selectedAccountId,
-      defaultCategory?.id
+      selectedAccountId
     );
 
     if (success) {
