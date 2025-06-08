@@ -41,13 +41,12 @@ serve(async (req) => {
 
     const formData = await req.formData()
     const file = formData.get('file') as File
-    const documentType = formData.get('type') as string
 
     if (!file) {
       throw new Error('Nenhum arquivo enviado')
     }
 
-    console.log(`Processing ${documentType} file: ${file.name}, size: ${file.size}, type: ${file.type}`)
+    console.log(`Processing CSV file: ${file.name}, size: ${file.size}, type: ${file.type}`)
 
     // Verificar se é CSV
     if (!file.type.includes('csv') && !file.name.toLowerCase().endsWith('.csv')) {
@@ -102,24 +101,38 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
     // Detectar separador (vírgula ou ponto e vírgula)
     let separator = ','
     if (lines.length > 0) {
-      const firstLine = lines[0]
-      const commaCount = (firstLine.match(/,/g) || []).length
-      const semicolonCount = (firstLine.match(/;/g) || []).length
-      
-      if (semicolonCount > commaCount) {
-        separator = ';'
+      const firstDataLine = lines.find(line => line.includes('Data') || line.match(/\d{2}\/\d{2}\/\d{4}/))
+      if (firstDataLine) {
+        const commaCount = (firstDataLine.match(/,/g) || []).length
+        const semicolonCount = (firstDataLine.match(/;/g) || []).length
+        
+        if (semicolonCount > commaCount) {
+          separator = ';'
+        }
       }
     }
     
     console.log(`Using separator: "${separator}"`)
     
-    // Pular cabeçalho se existir
+    // Encontrar linha de cabeçalho de dados
     let startIndex = 0
-    if (lines.length > 0) {
-      const firstLine = lines[0].toLowerCase()
-      if (firstLine.includes('data') || firstLine.includes('lancamento') || firstLine.includes('historico')) {
-        startIndex = 1
-        console.log('Skipping header row')
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].toLowerCase()
+      if (line.includes('data') && (line.includes('lancamento') || line.includes('lançamento')) && line.includes('historico')) {
+        startIndex = i + 1
+        console.log(`Found header at line ${i + 1}, starting data processing from line ${startIndex + 1}`)
+        break
+      }
+    }
+    
+    // Se não encontrou cabeçalho específico, procurar primeira linha com data
+    if (startIndex === 0) {
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].match(/\d{2}\/\d{2}\/\d{4}/)) {
+          startIndex = i
+          console.log(`No header found, starting from first date line: ${i + 1}`)
+          break
+        }
       }
     }
     
@@ -131,18 +144,26 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
       
       const columns = line.split(separator).map(col => col.trim().replace(/['"]/g, ''))
       
+      // Deve ter pelo menos 5 colunas (Data, Lançamento, Histórico, Descrição, Valor)
+      // Pode ter 6 se incluir Saldo
       if (columns.length < 5) {
         console.log(`Skipping line ${i + 1}: insufficient columns (${columns.length})`)
         continue
       }
       
-      // Mapear colunas: Data, Lançamento, Histórico, Descrição, Valor
+      // Mapear colunas: Data, Lançamento, Histórico, Descrição, Valor [, Saldo]
       const [dateStr, lancamento, historico, descricao, valorStr] = columns
+      
+      // Verificar se é linha válida (tem data)
+      if (!dateStr.match(/\d{2}\/\d{2}\/\d{4}/)) {
+        console.log(`Skipping line ${i + 1}: invalid date format`)
+        continue
+      }
       
       // Processar data
       const date = convertDateFormat(dateStr)
       if (!date) {
-        console.log(`Skipping line ${i + 1}: invalid date format`)
+        console.log(`Skipping line ${i + 1}: could not convert date`)
         continue
       }
       
@@ -153,18 +174,26 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
         continue
       }
       
-      // Determinar tipo (receita ou despesa)
-      // Por padrão, valores negativos são despesas, positivos são receitas
-      const isNegative = valorStr.includes('-') || valorStr.startsWith('(')
-      const type: 'income' | 'expense' = isNegative ? 'expense' : 'income'
+      // Determinar tipo baseado no valor e no tipo de lançamento
+      const isCredit = determineTransactionType(valorStr, lancamento, historico)
+      const type: 'income' | 'expense' = isCredit ? 'income' : 'expense'
       
-      // Criar descrição combinando histórico e descrição
-      const description = `${historico} - ${descricao}`.trim()
+      // Criar descrição combinando lançamento, histórico e descrição
+      let description = ''
+      if (lancamento && historico && descricao) {
+        description = `${lancamento} - ${historico} - ${descricao}`.trim()
+      } else if (lancamento && historico) {
+        description = `${lancamento} - ${historico}`.trim()
+      } else if (historico && descricao) {
+        description = `${historico} - ${descricao}`.trim()
+      } else {
+        description = (lancamento || historico || descricao || 'Transação').trim()
+      }
       
       const transaction: TransactionData = {
         type,
         amount: Math.abs(amount),
-        description,
+        description: description.substring(0, 200), // Limitar tamanho
         date
       }
       
@@ -184,29 +213,32 @@ function parseMonetaryValue(amountStr: string): number {
   try {
     if (!amountStr) return 0
     
+    // Remover espaços e caracteres não numéricos (exceto vírgula, ponto e sinais)
     let cleanAmount = amountStr.replace(/[^\d,.+-]/g, '').trim()
     
-    // Remover parênteses (formato contábil para negativos)
+    // Verificar se é negativo
     const isNegative = cleanAmount.includes('-') || amountStr.includes('(')
     cleanAmount = cleanAmount.replace(/[()+-]/g, '')
     
-    // Tratar formato brasileiro: 1.234,56 ou 1234,56
+    // Tratar formato brasileiro: 1.234,56
     if (cleanAmount.includes('.') && cleanAmount.includes(',')) {
-      // Formato: 1.234,56
+      // Verificar se o ponto é separador de milhares e vírgula é decimal
       const parts = cleanAmount.split(',')
-      if (parts.length === 2 && parts[1].length === 2) {
+      if (parts.length === 2 && parts[1].length <= 2) {
+        // Formato brasileiro: remover pontos (milhares) e trocar vírgula por ponto
         cleanAmount = parts[0].replace(/\./g, '') + '.' + parts[1]
       }
     } else if (cleanAmount.includes(',') && !cleanAmount.includes('.')) {
-      // Formato: 1234,56
+      // Apenas vírgula: substituir por ponto decimal
       cleanAmount = cleanAmount.replace(',', '.')
     } else if (cleanAmount.includes('.')) {
-      // Verificar se é separador decimal ou milhares
+      // Apenas ponto: verificar se é decimal ou milhares
       const parts = cleanAmount.split('.')
-      if (parts.length === 2 && parts[1].length !== 2) {
-        // É separador de milhares, remover
+      if (parts.length === 2 && parts[1].length > 2) {
+        // Provavelmente separador de milhares
         cleanAmount = cleanAmount.replace(/\./g, '')
       }
+      // Se parts[1].length <= 2, manter como decimal
     }
     
     const amount = parseFloat(cleanAmount)
@@ -216,6 +248,29 @@ function parseMonetaryValue(amountStr: string): number {
     console.error('Error parsing amount:', amountStr, error)
     return 0
   }
+}
+
+function determineTransactionType(valorStr: string, lancamento: string, historico: string): boolean {
+  // Se o valor é explicitamente positivo
+  if (valorStr.includes('+') || (!valorStr.includes('-') && !valorStr.includes('('))) {
+    // Verificar tipos de receita por palavras-chave
+    const text = `${lancamento} ${historico}`.toLowerCase()
+    if (text.includes('recebido') || 
+        text.includes('deposito') || 
+        text.includes('depósito') ||
+        text.includes('credito') || 
+        text.includes('crédito') ||
+        text.includes('salario') || 
+        text.includes('salário') ||
+        text.includes('pix recebido') ||
+        text.includes('estorno') ||
+        text.includes('cashback')) {
+      return true
+    }
+  }
+  
+  // Por padrão, valores negativos são despesas, positivos são receitas
+  return !valorStr.includes('-') && !valorStr.includes('(')
 }
 
 function convertDateFormat(dateStr: string): string | null {

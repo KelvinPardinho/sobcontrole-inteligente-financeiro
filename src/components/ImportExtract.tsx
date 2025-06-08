@@ -97,15 +97,21 @@ export function ImportExtract({ onFileUpload, disabled = false }: ImportExtractP
           <div className="p-4 bg-muted rounded-lg">
             <h3 className="font-medium mb-2">Formato do CSV</h3>
             <p className="text-sm text-muted-foreground mb-2">
-              O arquivo CSV deve conter as seguintes colunas na ordem:
+              O arquivo CSV deve conter as seguintes colunas na ordem (com ou sem coluna Saldo):
             </p>
-            <ul className="text-sm text-muted-foreground list-disc list-inside">
+            <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
               <li><strong>Data</strong> - no formato DD/MM/AAAA</li>
-              <li><strong>Lançamento</strong> - tipo da operação</li>
+              <li><strong>Lançamento</strong> - tipo da operação (PIX, Compra, etc.)</li>
               <li><strong>Histórico</strong> - categoria da transação</li>
               <li><strong>Descrição</strong> - detalhes da transação</li>
-              <li><strong>Valor</strong> - valor em reais (formato: 1.234,56)</li>
+              <li><strong>Valor</strong> - valor em reais (formato: 1.234,56 ou -1.234,56)</li>
+              <li><strong>Saldo</strong> - (opcional) saldo após a transação</li>
             </ul>
+            <div className="mt-3 p-2 bg-gray-50 rounded text-xs font-mono">
+              <p className="font-medium mb-1">Exemplo:</p>
+              <p>Data;Lançamento;Histórico;Descrição;Valor;Saldo</p>
+              <p>02/06/2025;Pix enviado;Alimentação;Mercado ABC;-150,50;2.850,00</p>
+            </div>
           </div>
           
           <Button 
