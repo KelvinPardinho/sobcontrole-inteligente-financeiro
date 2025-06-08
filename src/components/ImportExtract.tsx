@@ -59,7 +59,7 @@ export function ImportExtract({ onFileUpload, disabled = false }: ImportExtractP
   return (
     <>
       <CardHeader>
-        <CardTitle>Importar Extrato</CardTitle>
+        <CardTitle>Importar Extrato CSV</CardTitle>
       </CardHeader>
       <CardContent>
         <div 
@@ -78,15 +78,15 @@ export function ImportExtract({ onFileUpload, disabled = false }: ImportExtractP
         >
           <FileText className="h-10 w-10 text-muted-foreground mb-4" />
           <p className="text-lg font-medium">
-            {disabled ? "Selecione uma conta primeiro" : "Arraste seu arquivo ou clique para selecionar"}
+            {disabled ? "Selecione uma conta primeiro" : "Arraste seu arquivo CSV ou clique para selecionar"}
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Suporta arquivos PDF, TXT, CSV ou Excel
+            Apenas arquivos CSV são suportados
           </p>
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,.pdf,.ofx,.txt,.xls,.xlsx"
+            accept=".csv"
             onChange={handleChange}
             className="hidden"
             disabled={disabled}
@@ -95,12 +95,17 @@ export function ImportExtract({ onFileUpload, disabled = false }: ImportExtractP
         
         <div className="mt-6 space-y-4">
           <div className="p-4 bg-muted rounded-lg">
-            <h3 className="font-medium mb-2">Dica de uso</h3>
-            <p className="text-sm text-muted-foreground">
-              Para melhores resultados, baixe o extrato de sua instituição financeira
-              no formato CSV, TXT ou PDF. Todas as transações encontradas no documento
-              serão extraídas automaticamente.
+            <h3 className="font-medium mb-2">Formato do CSV</h3>
+            <p className="text-sm text-muted-foreground mb-2">
+              O arquivo CSV deve conter as seguintes colunas na ordem:
             </p>
+            <ul className="text-sm text-muted-foreground list-disc list-inside">
+              <li><strong>Data</strong> - no formato DD/MM/AAAA</li>
+              <li><strong>Lançamento</strong> - tipo da operação</li>
+              <li><strong>Histórico</strong> - categoria da transação</li>
+              <li><strong>Descrição</strong> - detalhes da transação</li>
+              <li><strong>Valor</strong> - valor em reais (formato: 1.234,56)</li>
+            </ul>
           </div>
           
           <Button 
@@ -109,7 +114,7 @@ export function ImportExtract({ onFileUpload, disabled = false }: ImportExtractP
             disabled={disabled}
           >
             <Upload className="mr-2 h-4 w-4" />
-            Selecionar Arquivo
+            Selecionar Arquivo CSV
           </Button>
         </div>
       </CardContent>

@@ -1,8 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { extractTextFromPDF } from './pdf-processor.ts'
-import { extractTransactionsFromText } from './transaction-extractor.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,25 +49,17 @@ serve(async (req) => {
 
     console.log(`Processing ${documentType} file: ${file.name}, size: ${file.size}, type: ${file.type}`)
 
-    const extractedTransactions = await processDocument(file, documentType)
+    // Verificar se é CSV
+    if (!file.type.includes('csv') && !file.name.toLowerCase().endsWith('.csv')) {
+      throw new Error('Apenas arquivos CSV são suportados')
+    }
+
+    const extractedTransactions = await processCSVDocument(file)
 
     console.log(`Extracted ${extractedTransactions.length} transactions`)
 
     if (extractedTransactions.length === 0) {
-      console.log('No transactions extracted, generating sample data')
-      const sampleTransactions = generateSampleTransactions()
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          transactions: sampleTransactions,
-          message: `${sampleTransactions.length} transações de exemplo geradas! (O arquivo não pôde ser processado, mas você pode ver como funciona a importação)`
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        },
-      )
+      throw new Error('Nenhuma transação encontrada no arquivo CSV. Verifique o formato.')
     }
 
     return new Response(
@@ -99,66 +89,148 @@ serve(async (req) => {
   }
 })
 
-async function processDocument(file: File, documentType: string): Promise<TransactionData[]> {
-  let text = ''
+async function processCSVDocument(file: File): Promise<TransactionData[]> {
+  const transactions: TransactionData[] = []
   
   try {
-    console.log(`Processing file type: ${file.type}, name: ${file.name}`)
+    const text = await file.text()
+    console.log('CSV content length:', text.length)
     
-    if (file.type === 'application/pdf') {
-      console.log('Processing PDF file')
-      text = await extractTextFromPDF(file)
-    } else if (file.type.includes('text') || file.name.toLowerCase().endsWith('.txt')) {
-      console.log('Processing TXT file')
-      text = await file.text()
-    } else if (file.type.includes('csv') || file.name.toLowerCase().endsWith('.csv')) {
-      console.log('Processing CSV file')
-      text = await file.text()
-    } else if (file.type.includes('excel') || file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
-      console.log('Processing Excel file as text')
-      text = await file.text()
-    } else {
-      console.log('Processing as generic text file')
-      text = await file.text()
+    const lines = text.split('\n').filter(line => line.trim())
+    console.log(`Processing ${lines.length} lines`)
+    
+    // Detectar separador (vírgula ou ponto e vírgula)
+    let separator = ','
+    if (lines.length > 0) {
+      const firstLine = lines[0]
+      const commaCount = (firstLine.match(/,/g) || []).length
+      const semicolonCount = (firstLine.match(/;/g) || []).length
+      
+      if (semicolonCount > commaCount) {
+        separator = ';'
+      }
     }
     
-    console.log('Extracted text length:', text.length)
-    console.log('Text preview (first 200 chars):', text.substring(0, 200))
+    console.log(`Using separator: "${separator}"`)
     
-    return extractTransactionsFromText(text, documentType)
+    // Pular cabeçalho se existir
+    let startIndex = 0
+    if (lines.length > 0) {
+      const firstLine = lines[0].toLowerCase()
+      if (firstLine.includes('data') || firstLine.includes('lancamento') || firstLine.includes('historico')) {
+        startIndex = 1
+        console.log('Skipping header row')
+      }
+    }
+    
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line) continue
+      
+      console.log(`Processing line ${i + 1}: ${line}`)
+      
+      const columns = line.split(separator).map(col => col.trim().replace(/['"]/g, ''))
+      
+      if (columns.length < 5) {
+        console.log(`Skipping line ${i + 1}: insufficient columns (${columns.length})`)
+        continue
+      }
+      
+      // Mapear colunas: Data, Lançamento, Histórico, Descrição, Valor
+      const [dateStr, lancamento, historico, descricao, valorStr] = columns
+      
+      // Processar data
+      const date = convertDateFormat(dateStr)
+      if (!date) {
+        console.log(`Skipping line ${i + 1}: invalid date format`)
+        continue
+      }
+      
+      // Processar valor
+      const amount = parseMonetaryValue(valorStr)
+      if (amount === 0) {
+        console.log(`Skipping line ${i + 1}: invalid amount`)
+        continue
+      }
+      
+      // Determinar tipo (receita ou despesa)
+      // Por padrão, valores negativos são despesas, positivos são receitas
+      const isNegative = valorStr.includes('-') || valorStr.startsWith('(')
+      const type: 'income' | 'expense' = isNegative ? 'expense' : 'income'
+      
+      // Criar descrição combinando histórico e descrição
+      const description = `${historico} - ${descricao}`.trim()
+      
+      const transaction: TransactionData = {
+        type,
+        amount: Math.abs(amount),
+        description,
+        date
+      }
+      
+      transactions.push(transaction)
+      console.log(`Added transaction: ${transaction.type} R$ ${transaction.amount} - ${transaction.description}`)
+    }
     
   } catch (error) {
-    console.error('Error processing document:', error)
-    throw new Error(`Erro ao processar documento: ${error.message}`)
+    console.error('Error processing CSV:', error)
+    throw new Error(`Erro ao processar CSV: ${error.message}`)
+  }
+  
+  return transactions
+}
+
+function parseMonetaryValue(amountStr: string): number {
+  try {
+    if (!amountStr) return 0
+    
+    let cleanAmount = amountStr.replace(/[^\d,.+-]/g, '').trim()
+    
+    // Remover parênteses (formato contábil para negativos)
+    const isNegative = cleanAmount.includes('-') || amountStr.includes('(')
+    cleanAmount = cleanAmount.replace(/[()+-]/g, '')
+    
+    // Tratar formato brasileiro: 1.234,56 ou 1234,56
+    if (cleanAmount.includes('.') && cleanAmount.includes(',')) {
+      // Formato: 1.234,56
+      const parts = cleanAmount.split(',')
+      if (parts.length === 2 && parts[1].length === 2) {
+        cleanAmount = parts[0].replace(/\./g, '') + '.' + parts[1]
+      }
+    } else if (cleanAmount.includes(',') && !cleanAmount.includes('.')) {
+      // Formato: 1234,56
+      cleanAmount = cleanAmount.replace(',', '.')
+    } else if (cleanAmount.includes('.')) {
+      // Verificar se é separador decimal ou milhares
+      const parts = cleanAmount.split('.')
+      if (parts.length === 2 && parts[1].length !== 2) {
+        // É separador de milhares, remover
+        cleanAmount = cleanAmount.replace(/\./g, '')
+      }
+    }
+    
+    const amount = parseFloat(cleanAmount)
+    return isNaN(amount) ? 0 : (isNegative ? -amount : amount)
+    
+  } catch (error) {
+    console.error('Error parsing amount:', amountStr, error)
+    return 0
   }
 }
 
-function generateSampleTransactions(): TransactionData[] {
-  const today = new Date()
-  const transactions: TransactionData[] = []
-  
-  const sampleData = [
-    { desc: "PIX Recebido - João Silva", amount: 1250.50, type: "income", daysAgo: 1 },
-    { desc: "Compra Débito - Supermercado ABC", amount: 89.40, type: "expense", daysAgo: 2 },
-    { desc: "TED Enviada - Pagamento Conta", amount: 450.00, type: "expense", daysAgo: 3 },
-    { desc: "Depósito em Conta", amount: 2800.00, type: "income", daysAgo: 5 },
-    { desc: "Débito Automático - Conta de Luz", amount: 125.67, type: "expense", daysAgo: 7 },
-    { desc: "Compra Cartão - Farmácia XYZ", amount: 45.30, type: "expense", daysAgo: 8 },
-    { desc: "PIX Enviado - Maria Santos", amount: 200.00, type: "expense", daysAgo: 10 },
-  ]
-  
-  sampleData.forEach(item => {
-    const date = new Date(today)
-    date.setDate(date.getDate() - item.daysAgo)
-    
-    transactions.push({
-      type: item.type as 'income' | 'expense',
-      amount: item.amount,
-      description: item.desc,
-      date: date.toISOString().split('T')[0]
-    })
-  })
-  
-  console.log(`Generated ${transactions.length} sample transactions`)
-  return transactions
+function convertDateFormat(dateStr: string): string | null {
+  try {
+    // Suportar formatos: DD/MM/AAAA, DD-MM-AAAA, DD.MM.AAAA
+    const match = dateStr.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/)
+    if (match) {
+      let [, day, month, year] = match
+      if (year.length === 2) {
+        year = parseInt(year) > 50 ? '19' + year : '20' + year
+      }
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    }
+  } catch (error) {
+    console.error('Date conversion error:', error)
+  }
+  return null
 }

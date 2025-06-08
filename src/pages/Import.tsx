@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainNav } from "@/components/MainNav";
 import { FooterSection } from "@/components/FooterSection";
@@ -27,8 +28,6 @@ export default function Import() {
   const [importStatus, setImportStatus] = useState<"idle" | "processing" | "success" | "error" | "extracted">("idle");
   const [extractedTransactions, setExtractedTransactions] = useState<ExtractedTransaction[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [freeImportsLeft, setFreeImportsLeft] = useState(2);
-  const [freeReceiptsLeft, setFreeReceiptsLeft] = useState(5);
   const [errorMessage, setErrorMessage] = useState<string>("");
   
   const { importTransactions } = useTransactions();
@@ -47,19 +46,9 @@ export default function Import() {
     try {
       console.log('Uploading file:', file.name, 'Type:', file.type, 'Size:', file.size);
       
-      // Verificar se é um tipo de arquivo suportado
-      const supportedTypes = [
-        'application/pdf',
-        'text/plain',
-        'text/csv',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      ];
-      
-      const supportedExtensions = /\.(pdf|txt|csv|xls|xlsx)$/i;
-      
-      if (!supportedTypes.includes(file.type) && !supportedExtensions.test(file.name)) {
-        throw new Error("Tipo de arquivo não suportado. Use PDF, TXT, CSV ou Excel.");
+      // Verificar se é CSV
+      if (!file.type.includes('csv') && !file.name.toLowerCase().endsWith('.csv')) {
+        throw new Error("Apenas arquivos CSV são suportados.");
       }
 
       // Criar FormData para enviar o arquivo
@@ -86,17 +75,11 @@ export default function Import() {
         setImportStatus("extracted");
         toast.success(data.message);
       } else if (data.success && data.transactions && data.transactions.length === 0) {
-        throw new Error("Nenhuma transação foi encontrada no documento. Verifique se o arquivo contém dados válidos.");
+        throw new Error("Nenhuma transação foi encontrada no arquivo CSV. Verifique se o formato está correto.");
       } else {
         throw new Error(data.error || "Erro desconhecido no processamento");
       }
 
-      // Reduzir contadores apenas no plano grátis
-      if (importType === "extract") {
-        setFreeImportsLeft(prev => Math.max(0, prev - 1));
-      } else {
-        setFreeReceiptsLeft(prev => Math.max(0, prev - 1));
-      }
     } catch (error: any) {
       console.error("Erro no processamento:", error);
       setImportStatus("error");
@@ -145,7 +128,7 @@ export default function Import() {
             <TabsList>
               <TabsTrigger value="extract">
                 <FileText className="mr-2 h-4 w-4" />
-                Extratos
+                Extratos CSV
               </TabsTrigger>
               <TabsTrigger value="receipt">
                 <Camera className="mr-2 h-4 w-4" />
@@ -177,11 +160,9 @@ export default function Import() {
                   <CardContent className="flex flex-col items-center justify-center h-64">
                     <div className="animate-pulse text-center">
                       <div className="h-12 w-12 mx-auto rounded-full bg-sob-blue/20 mb-4 animate-spin border-4 border-sob-blue border-t-transparent"></div>
-                      <p className="text-lg font-medium">Processando seu arquivo...</p>
+                      <p className="text-lg font-medium">Processando seu arquivo CSV...</p>
                       <p className="text-muted-foreground mt-2">
-                        {importType === "extract" 
-                          ? "Extraindo todas as transações do extrato bancário" 
-                          : "Lendo informações do cupom fiscal"}
+                        Extraindo transações do arquivo
                       </p>
                     </div>
                   </CardContent>
@@ -209,14 +190,13 @@ export default function Import() {
                       </div>
                       <p className="text-lg font-medium">Erro na importação</p>
                       <p className="text-muted-foreground mt-2 max-w-md">
-                        {errorMessage || "Não foi possível processar o arquivo. Tente novamente ou use um formato diferente."}
+                        {errorMessage || "Não foi possível processar o arquivo CSV."}
                       </p>
                       <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-                        <p className="font-medium mb-1">Formatos suportados:</p>
-                        <p>• PDF (extratos e cupons fiscais)</p>
-                        <p>• TXT (extratos em texto)</p>
-                        <p>• CSV (dados de transações)</p>
-                        <p>• Excel (XLS/XLSX)</p>
+                        <p className="font-medium mb-1">Formato esperado do CSV:</p>
+                        <p>Data, Lançamento, Histórico, Descrição, Valor</p>
+                        <p className="mt-2">Exemplo:</p>
+                        <p className="font-mono text-xs">01/06/2025,PIX,Alimentação,Mercado ABC,150,50</p>
                       </div>
                       <Button className="mt-6 bg-sob-blue hover:bg-sob-blue/90" onClick={() => {
                         setImportStatus("idle");
@@ -261,15 +241,7 @@ export default function Import() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="mb-2 text-sm font-medium">Importações de extratos</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Restantes</span>
-                    <span className="font-medium">Ilimitado</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="mb-2 text-sm font-medium">Leitura de comprovantes (OCR)</p>
+                  <p className="mb-2 text-sm font-medium">Importações CSV</p>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Restantes</span>
                     <span className="font-medium">Ilimitado</span>
@@ -278,7 +250,7 @@ export default function Import() {
                 
                 <div className="pt-4 border-t">
                   <p className="text-sm text-muted-foreground mb-4">
-                    Todas as transações do documento serão importadas automaticamente.
+                    Importe seus extratos em formato CSV com as colunas: Data, Lançamento, Histórico, Descrição e Valor.
                   </p>
                   <Button className="w-full bg-sob-blue hover:bg-sob-blue/90">
                     Atualizar para Gold
