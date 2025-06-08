@@ -5,6 +5,8 @@ import { Transaction } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { useCategories } from "@/hooks/useCategories";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useTransactions } from "@/hooks/useTransactions";
+import { EditTransactionDialog } from "@/components/EditTransactionDialog";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -13,6 +15,7 @@ interface TransactionListProps {
 export function TransactionList({ transactions }: TransactionListProps) {
   const { getCategoryName } = useCategories();
   const { accounts } = useAccounts();
+  const { updateTransaction } = useTransactions();
 
   const getAccountName = (accountId: string): string => {
     const account = accounts.find(acc => acc.id === accountId);
@@ -34,12 +37,13 @@ export function TransactionList({ transactions }: TransactionListProps) {
             <TableHead>Conta/Cartão</TableHead>
             <TableHead>Valor</TableHead>
             <TableHead>Tipo</TableHead>
+            <TableHead className="w-12">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {transactions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                 Nenhuma transação encontrada
               </TableCell>
             </TableRow>
@@ -66,6 +70,12 @@ export function TransactionList({ transactions }: TransactionListProps) {
                   `}>
                     {transaction.type === "income" ? "Receita" : "Despesa"}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <EditTransactionDialog 
+                    transaction={transaction}
+                    onTransactionUpdated={updateTransaction}
+                  />
                 </TableCell>
               </TableRow>
             ))

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { Check, X, Edit } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { TransactionForm } from "@/components/TransactionForm";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ExtractedTransaction {
   type: 'income' | 'expense';
@@ -31,6 +33,33 @@ export function ExtractedTransactions({
   const [selectedTransactions, setSelectedTransactions] = useState<Set<number>>(
     new Set(Array.from({ length: initialTransactions.length }, (_, i) => i))
   );
+  const [importCategoryName, setImportCategoryName] = useState<string>("Importação");
+  const { session } = useAuth();
+
+  useEffect(() => {
+    fetchImportCategory();
+  }, [session]);
+
+  const fetchImportCategory = async () => {
+    if (!session?.user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('user_id', session.user.id)
+        .eq('name', 'Importação')
+        .single();
+      
+      if (error) {
+        console.error("Categoria Importação não encontrada:", error);
+      } else if (data) {
+        setImportCategoryName(data.name);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar categoria Importação:", error);
+    }
+  };
 
   const toggleTransaction = (index: number) => {
     const newSelected = new Set(selectedTransactions);
@@ -58,7 +87,7 @@ export function ExtractedTransactions({
       <CardHeader>
         <CardTitle>Transações Extraídas</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Revise as transações extraídas e selecione quais deseja importar
+          Revise as transações extraídas e selecione quais deseja importar. Todas as transações importadas serão categorizadas como "{importCategoryName}".
         </p>
       </CardHeader>
       <CardContent>

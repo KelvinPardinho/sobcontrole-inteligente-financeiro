@@ -135,6 +135,27 @@ export const useTransactions = () => {
     return categoriesMap[categoryId] || "Outros";
   };
 
+  const getImportCategoryId = async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('user_id', session?.user.id)
+        .eq('name', 'Importação')
+        .single();
+      
+      if (error) {
+        console.error("Erro ao buscar categoria Importação:", error);
+        return null;
+      }
+      
+      return data?.id || null;
+    } catch (error) {
+      console.error("Erro ao buscar categoria Importação:", error);
+      return null;
+    }
+  };
+
   const addTransaction = async (data: any) => {
     if (!session?.user) {
       toast.error("Você precisa estar autenticado para adicionar transações");
@@ -192,13 +213,54 @@ export const useTransactions = () => {
     }
   };
 
-  const importTransactions = async (transactions: any[], defaultAccountId?: string, defaultCategoryId?: string) => {
+  const updateTransaction = async (transactionId: string, data: any) => {
+    if (!session?.user) {
+      toast.error("Você precisa estar autenticado para atualizar transações");
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          type: data.type,
+          amount: data.amount,
+          date: data.date,
+          description: data.description,
+          category_id: data.category,
+          account_id: data.accountId,
+        })
+        .eq('id', transactionId)
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+
+      toast.success("Transação atualizada com sucesso!");
+      await fetchTransactions();
+      window.dispatchEvent(new CustomEvent('accountsNeedRefresh'));
+      return true;
+    } catch (error: any) {
+      toast.error(`Erro ao atualizar transação: ${error.message}`);
+      console.error("Erro ao atualizar transação:", error);
+      return false;
+    }
+  };
+
+  const importTransactions = async (transactions: any[], defaultAccountId?: string) => {
     if (!session?.user) {
       toast.error("Você precisa estar autenticado para importar transações");
       return false;
     }
 
     try {
+      // Buscar o ID da categoria "Importação"
+      const importCategoryId = await getImportCategoryId();
+      
+      if (!importCategoryId) {
+        toast.error("Categoria 'Importação' não encontrada. Tente recarregar a página.");
+        return false;
+      }
+
       // Preparar transações para inserção
       const transactionsData = transactions.map(transaction => ({
         user_id: session.user.id,
@@ -206,7 +268,7 @@ export const useTransactions = () => {
         amount: transaction.amount,
         date: transaction.date,
         description: transaction.description,
-        category_id: defaultCategoryId || null,
+        category_id: importCategoryId, // Usar a categoria "Importação"
         account_id: defaultAccountId || '', // Será necessário ter uma conta padrão
       }));
 
@@ -246,6 +308,7 @@ export const useTransactions = () => {
     isLoading,
     fetchTransactions,
     addTransaction,
+    updateTransaction,
     importTransactions
   };
 };
