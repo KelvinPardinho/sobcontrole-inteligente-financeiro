@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -55,6 +54,24 @@ serve(async (req) => {
     const extractedTransactions = await processDocument(file, documentType)
 
     console.log(`Extracted ${extractedTransactions.length} transactions`)
+
+    // Se não conseguiu extrair transações, gerar dados de exemplo para demonstração
+    if (extractedTransactions.length === 0) {
+      console.log('No transactions extracted, generating sample data for demonstration')
+      const sampleTransactions = generateSampleTransactions()
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          transactions: sampleTransactions,
+          message: `${sampleTransactions.length} transações de exemplo geradas! (O arquivo não pôde ser processado, mas você pode ver como funciona a importação)`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      )
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -125,45 +142,51 @@ async function extractTextFromPDF(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer()
     const uint8Array = new Uint8Array(arrayBuffer)
     
-    // Tentar extrair texto do PDF
+    console.log('PDF file size:', uint8Array.length)
+    
+    // Tentar extrair texto do PDF usando diferentes métodos
     let text = ''
     
     try {
-      // Tentar UTF-8 primeiro
+      // Método 1: Tentar UTF-8
       text = new TextDecoder('utf-8').decode(uint8Array)
+      console.log('UTF-8 decode successful, length:', text.length)
     } catch {
       try {
-        // Tentar ISO-8859-1 se UTF-8 falhar
+        // Método 2: Tentar ISO-8859-1
         text = new TextDecoder('iso-8859-1').decode(uint8Array)
+        console.log('ISO-8859-1 decode successful, length:', text.length)
       } catch {
-        // Último recurso: processar byte por byte
+        // Método 3: Processar byte por byte
         text = Array.from(uint8Array).map(byte => 
           byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : ' '
         ).join('')
+        console.log('Byte-by-byte decode successful, length:', text.length)
       }
     }
     
-    console.log('Raw PDF text length:', text.length)
-    
-    // Extrair informações usando regex mais robustos
+    // Extrair dados usando padrões mais robustos
     const extractedData = extractDataFromPDFText(text)
+    console.log('Extracted data length:', extractedData.length)
     
-    if (extractedData.length > 100) {
-      console.log('Successfully extracted data from PDF')
+    if (extractedData.length > 50) {
+      console.log('Successfully extracted meaningful data from PDF')
       return extractedData
     }
     
-    // Se não conseguiu extrair dados úteis, tentar com abordagem diferente
+    // Se não conseguiu extrair dados úteis, tentar abordagem alternativa
     console.log('Trying alternative PDF parsing approach')
     const alternativeData = extractAlternativePDFData(text)
     
-    if (alternativeData.length > 50) {
+    if (alternativeData.length > 20) {
       return alternativeData
     }
     
-    // Se ainda não conseguiu, gerar dados simulados para demonstração
-    console.log('PDF extraction failed, generating sample data for demonstration')
-    return generateSampleBankStatement()
+    // Último recurso: buscar por padrões específicos de extrato
+    console.log('Trying pattern-based extraction')
+    const patternData = extractPatternBasedData(text)
+    
+    return patternData
     
   } catch (error) {
     console.error('PDF extraction error:', error)
@@ -175,38 +198,47 @@ function extractDataFromPDFText(text: string): string {
   const lines = text.split(/[\r\n]+/)
   const extractedLines: string[] = []
   
+  console.log('Total lines to process:', lines.length)
+  
   for (const line of lines) {
     // Remover caracteres de controle e limpar
-    const cleanLine = line.replace(/[^\x20-\x7E]/g, ' ').trim()
+    const cleanLine = line.replace(/[^\x20-\x7E\u00C0-\u00FF]/g, ' ').trim()
     
-    if (cleanLine.length < 5) continue
+    if (cleanLine.length < 8) continue
     
     // Buscar padrões que parecem transações
     if (
       // Data seguida de descrição e valor
       /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}.*\d+[,.]?\d{2}/.test(cleanLine) ||
       // PIX, TED, DOC, DEBITO, CREDITO
-      /(PIX|TED|DOC|DÉBITO|DÉBITO|CRÉDITO|CREDITO|COMPRA|PAGAMENTO|SAQUE|DEPÓSITO|DEPOSITO)/i.test(cleanLine) ||
+      /(PIX|TED|DOC|DÉBITO|DÉBITO|CRÉDITO|CREDITO|COMPRA|PAGAMENTO|SAQUE|DEPÓSITO|DEPOSITO|TRANSFERENCIA|SALARIO)/i.test(cleanLine) ||
       // Padrões de valor monetário
       /R\$\s*\d+[,.]\d{2}/.test(cleanLine) ||
-      // Números com valor monetário
-      /\d{1,3}(?:[.,]\d{3})*[,.]\d{2}/.test(cleanLine)
+      // Números com valor monetário (formato brasileiro)
+      /\d{1,3}(?:[.,]\d{3})*[,.]\d{2}/.test(cleanLine) ||
+      // Estabelecimentos comerciais
+      /(SUPERMERCADO|FARMACIA|POSTO|LOJA|MERCADO|PADARIA|RESTAURANTE)/i.test(cleanLine)
     ) {
       extractedLines.push(cleanLine)
+      console.log('Found potential transaction:', cleanLine.substring(0, 100))
     }
   }
   
+  console.log('Extracted lines count:', extractedLines.length)
   return extractedLines.join('\n')
 }
 
 function extractAlternativePDFData(text: string): string {
   // Buscar por padrões específicos em PDFs de extrato
   const patterns = [
-    /Data.*Histórico.*Valor/i,
+    /Data.*Histórico.*Valor/gi,
     /\d{2}\/\d{2}\/\d{4}.*[-]?\d+[,]\d{2}/g,
     /PIX.*\d+[,]\d{2}/gi,
     /Compra.*\d+[,]\d{2}/gi,
     /Saque.*\d+[,]\d{2}/gi,
+    /TED.*\d+[,]\d{2}/gi,
+    /DOC.*\d+[,]\d{2}/gi,
+    /Transferência.*\d+[,]\d{2}/gi,
   ]
   
   let extractedText = ''
@@ -215,34 +247,63 @@ function extractAlternativePDFData(text: string): string {
     const matches = text.match(pattern)
     if (matches) {
       extractedText += matches.join('\n') + '\n'
+      console.log(`Pattern matched ${matches.length} times:`, pattern.toString())
     }
   })
   
   return extractedText
 }
 
-function generateSampleBankStatement(): string {
-  const today = new Date()
-  const statements: string[] = []
+function extractPatternBasedData(text: string): string {
+  // Buscar por sequências que contêm data e valor
+  const lines = text.split(/\s+/)
+  const extractedData: string[] = []
   
-  for (let i = 0; i < 10; i++) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    const dateStr = date.toLocaleDateString('pt-BR')
+  for (let i = 0; i < lines.length - 2; i++) {
+    const current = lines[i]
+    const next = lines[i + 1]
+    const afterNext = lines[i + 2]
     
-    const transactions = [
-      `${dateStr};PIX Recebido;João Silva;1.250,50`,
-      `${dateStr};Compra Débito;Supermercado ABC;89,40`,
-      `${dateStr};TED Enviada;Pagamento Conta;450,00`,
-      `${dateStr};Depósito;Transferência;2.800,00`,
-      `${dateStr};Débito Automático;Conta de Luz;125,67`,
-    ]
-    
-    const randomTransaction = transactions[Math.floor(Math.random() * transactions.length)]
-    statements.push(randomTransaction)
+    // Buscar padrão: data + descrição + valor
+    if (current.match(/\d{2}\/\d{2}\/\d{4}/) && afterNext.match(/\d+[,]\d{2}/)) {
+      const transaction = `${current} ${next} ${afterNext}`
+      extractedData.push(transaction)
+      console.log('Pattern-based match:', transaction)
+    }
   }
   
-  return statements.join('\n')
+  return extractedData.join('\n')
+}
+
+function generateSampleTransactions(): TransactionData[] {
+  const today = new Date()
+  const transactions: TransactionData[] = []
+  
+  // Gerar algumas transações de exemplo
+  const sampleData = [
+    { desc: "PIX Recebido - João Silva", amount: 1250.50, type: "income", daysAgo: 1 },
+    { desc: "Compra Débito - Supermercado ABC", amount: 89.40, type: "expense", daysAgo: 2 },
+    { desc: "TED Enviada - Pagamento Conta", amount: 450.00, type: "expense", daysAgo: 3 },
+    { desc: "Depósito em Conta", amount: 2800.00, type: "income", daysAgo: 5 },
+    { desc: "Débito Automático - Conta de Luz", amount: 125.67, type: "expense", daysAgo: 7 },
+    { desc: "Compra Cartão - Farmácia XYZ", amount: 45.30, type: "expense", daysAgo: 8 },
+    { desc: "PIX Enviado - Maria Santos", amount: 200.00, type: "expense", daysAgo: 10 },
+  ]
+  
+  sampleData.forEach(item => {
+    const date = new Date(today)
+    date.setDate(date.getDate() - item.daysAgo)
+    
+    transactions.push({
+      type: item.type as 'income' | 'expense',
+      amount: item.amount,
+      description: item.desc,
+      date: date.toISOString().split('T')[0]
+    })
+  })
+  
+  console.log(`Generated ${transactions.length} sample transactions`)
+  return transactions
 }
 
 function processReceipt(text: string, fileName: string): TransactionData[] {
@@ -298,6 +359,7 @@ function processReceipt(text: string, fileName: string): TransactionData[] {
         description: `Compra - ${establishment}`,
         date: date
       })
+      console.log(`Receipt processed: ${establishment}, R$ ${totalAmount}, ${date}`)
     }
     
   } catch (error) {
@@ -334,8 +396,10 @@ function processBankStatement(text: string, fileName: string): TransactionData[]
       const patterns = [
         // Data, descrição e valor
         /(\d{1,2}\/\d{1,2}\/\d{4})\s+(.+?)\s+([-]?\d{1,3}(?:[.,]\d{3})*[,]\d{2})/,
-        // PIX, TED, etc
-        /(PIX|TED|DOC|COMPRA|PAGAMENTO|SAQUE|DEPOSITO|CREDITO|DEBITO).+?(\d{1,2}\/\d{1,2}\/\d{4})?.+?([-]?\d{1,3}(?:[.,]\d{3})*[,]\d{2})/i
+        // PIX, TED, etc com valor
+        /(PIX|TED|DOC|COMPRA|PAGAMENTO|SAQUE|DEPOSITO|CREDITO|DEBITO).+?([-]?\d{1,3}(?:[.,]\d{3})*[,]\d{2})/i,
+        // Descrição seguida de data e valor
+        /(.+?)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+([-]?\d{1,3}(?:[.,]\d{3})*[,]\d{2})/
       ]
       
       for (const pattern of patterns) {
@@ -343,13 +407,13 @@ function processBankStatement(text: string, fileName: string): TransactionData[]
         if (match) {
           let dateStr = '', description = '', amountStr = ''
           
-          if (match.length === 4) {
+          if (pattern === patterns[0]) {
             [, dateStr, description, amountStr] = match
+          } else if (pattern === patterns[1]) {
+            [, description, amountStr] = match
+            dateStr = new Date().toLocaleDateString('pt-BR')
           } else {
             [, description, dateStr, amountStr] = match
-            if (!dateStr) {
-              dateStr = new Date().toLocaleDateString('pt-BR')
-            }
           }
           
           // Processar valor
@@ -362,7 +426,8 @@ function processBankStatement(text: string, fileName: string): TransactionData[]
                             description.toLowerCase().includes('recebido') ||
                             description.toLowerCase().includes('deposito') ||
                             description.toLowerCase().includes('credito') ||
-                            description.toLowerCase().includes('salario')
+                            description.toLowerCase().includes('salario') ||
+                            description.toLowerCase().includes('pix recebido')
                           )
           
           // Converter data
