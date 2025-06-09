@@ -169,32 +169,31 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
         continue
       }
       
-      // Processar valor
+      // Processar valor - usar o valor original da coluna Valor
       const amount = parseMonetaryValue(valorStr)
       if (amount === 0) {
         console.log(`Skipping line ${i + 1}: invalid amount`)
         continue
       }
       
-      // Determinar tipo baseado no valor e no tipo de lançamento
-      const isCredit = determineTransactionType(valorStr, lancamento, historico)
-      const type: 'income' | 'expense' = isCredit ? 'income' : 'expense'
+      // Determinar tipo baseado no sinal do valor
+      const type: 'income' | 'expense' = amount >= 0 ? 'income' : 'expense'
       
-      // Criar descrição combinando lançamento, histórico e descrição
+      // Criar descrição combinando histórico e descrição
       let description = ''
-      if (lancamento && historico && descricao) {
-        description = `${lancamento} - ${historico} - ${descricao}`.trim()
-      } else if (lancamento && historico) {
-        description = `${lancamento} - ${historico}`.trim()
-      } else if (historico && descricao) {
+      if (historico && descricao) {
         description = `${historico} - ${descricao}`.trim()
+      } else if (historico) {
+        description = historico.trim()
+      } else if (descricao) {
+        description = descricao.trim()
       } else {
-        description = (lancamento || historico || descricao || 'Transação').trim()
+        description = (lancamento || 'Transação').trim()
       }
       
       const transaction: TransactionData = {
         type,
-        amount: Math.abs(amount),
+        amount: Math.abs(amount), // Usar valor absoluto para o amount
         description: description.substring(0, 200), // Limitar tamanho
         date
       }
@@ -250,29 +249,6 @@ function parseMonetaryValue(amountStr: string): number {
     console.error('Error parsing amount:', amountStr, error)
     return 0
   }
-}
-
-function determineTransactionType(valorStr: string, lancamento: string, historico: string): boolean {
-  // Se o valor é explicitamente positivo
-  if (valorStr.includes('+') || (!valorStr.includes('-') && !valorStr.includes('('))) {
-    // Verificar tipos de receita por palavras-chave
-    const text = `${lancamento} ${historico}`.toLowerCase()
-    if (text.includes('recebido') || 
-        text.includes('deposito') || 
-        text.includes('depósito') ||
-        text.includes('credito') || 
-        text.includes('crédito') ||
-        text.includes('salario') || 
-        text.includes('salário') ||
-        text.includes('pix recebido') ||
-        text.includes('estorno') ||
-        text.includes('cashback')) {
-      return true
-    }
-  }
-  
-  // Por padrão, valores negativos são despesas, positivos são receitas
-  return !valorStr.includes('-') && !valorStr.includes('(')
 }
 
 function convertDateFormat(dateStr: string): string | null {
