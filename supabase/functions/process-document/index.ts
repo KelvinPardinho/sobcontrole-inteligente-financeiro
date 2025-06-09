@@ -142,19 +142,28 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
       
       console.log(`Processing line ${i + 1}: ${line}`)
       
-      const columns = line.split(separator).map(col => col.trim().replace(/['"]/g, ''))
+      const allColumns = line.split(separator).map(col => col.trim().replace(/['"]/g, ''))
       
-      // Processar apenas as primeiras 5 colunas: Data, Lançamento, Histórico, Descrição, Valor
-      // Ignorar a coluna Saldo se existir
+      // IMPORTANTE: Usar apenas as 5 primeiras colunas, ignorando completamente a coluna "Saldo"
+      const columns = allColumns.slice(0, 5)
+      
+      console.log(`All columns (${allColumns.length}):`, allColumns)
+      console.log(`Using first 5 columns:`, columns)
+      
       if (columns.length < 5) {
         console.log(`Skipping line ${i + 1}: insufficient columns (${columns.length})`)
         continue
       }
       
-      // Mapear apenas as 5 primeiras colunas: Data, Lançamento, Histórico, Descrição, Valor
-      const [dateStr, lancamento, historico, descricao, valorStr] = columns.slice(0, 5)
+      // Mapear as 5 primeiras colunas: Data, Lançamento, Histórico, Descrição, Valor
+      const [dateStr, lancamento, historico, descricao, valorStr] = columns
       
-      console.log(`Extracted data: date=${dateStr}, lancamento=${lancamento}, historico=${historico}, descricao=${descricao}, valor=${valorStr}`)
+      console.log(`Mapped data:`)
+      console.log(`  - Date: ${dateStr}`)
+      console.log(`  - Lançamento: ${lancamento}`)
+      console.log(`  - Histórico: ${historico}`)
+      console.log(`  - Descrição: ${descricao}`)
+      console.log(`  - Valor: ${valorStr}`)
       
       // Verificar se é linha válida (tem data)
       if (!dateStr.match(/\d{2}\/\d{2}\/\d{4}/)) {
@@ -169,10 +178,10 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
         continue
       }
       
-      // Processar valor - usar o valor original da coluna Valor
+      // Processar valor - usar APENAS a coluna "Valor" (quinta coluna)
       const amount = parseMonetaryValue(valorStr)
       if (amount === 0) {
-        console.log(`Skipping line ${i + 1}: invalid amount`)
+        console.log(`Skipping line ${i + 1}: invalid amount from valor column: ${valorStr}`)
         continue
       }
       
