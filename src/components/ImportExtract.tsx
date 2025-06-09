@@ -97,7 +97,7 @@ export function ImportExtract({ onFileUpload, disabled = false }: ImportExtractP
           <div className="p-4 bg-muted rounded-lg">
             <h3 className="font-medium mb-2">Formato do CSV</h3>
             <p className="text-sm text-muted-foreground mb-2">
-              O arquivo CSV deve conter as seguintes colunas na ordem (com ou sem coluna Saldo):
+              O arquivo CSV deve conter exatamente as seguintes 5 colunas na ordem:
             </p>
             <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
               <li><strong>Data</strong> - no formato DD/MM/AAAA</li>
@@ -105,12 +105,17 @@ export function ImportExtract({ onFileUpload, disabled = false }: ImportExtractP
               <li><strong>Histórico</strong> - categoria da transação</li>
               <li><strong>Descrição</strong> - detalhes da transação</li>
               <li><strong>Valor</strong> - valor em reais (formato: 1.234,56 ou -1.234,56)</li>
-              <li><strong>Saldo</strong> - (opcional) saldo após a transação</li>
             </ul>
             <div className="mt-3 p-2 bg-gray-50 rounded text-xs font-mono">
-              <p className="font-medium mb-1">Exemplo:</p>
-              <p>Data;Lançamento;Histórico;Descrição;Valor;Saldo</p>
-              <p>02/06/2025;Pix enviado;Alimentação;Mercado ABC;-150,50;2.850,00</p>
+              <p className="font-medium mb-1">Exemplo (com ponto e vírgula):</p>
+              <p>Data;Lançamento;Histórico;Descrição;Valor</p>
+              <p>02/06/2025;Pix enviado;Alimentação;Mercado ABC;-150,50</p>
+            </div>
+            <div className="mt-2 p-2 bg-yellow-50 rounded text-xs">
+              <p className="text-yellow-800">
+                <strong>Importante:</strong> A coluna Saldo será ignorada se presente. 
+                Apenas as 5 primeiras colunas serão processadas.
+              </p>
             </div>
           </div>
           

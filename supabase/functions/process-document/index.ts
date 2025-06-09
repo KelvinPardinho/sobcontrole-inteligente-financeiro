@@ -118,7 +118,7 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
     let startIndex = 0
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].toLowerCase()
-      if (line.includes('data') && (line.includes('lancamento') || line.includes('lançamento')) && line.includes('historico')) {
+      if (line.includes('data') && (line.includes('lancamento') || line.includes('lançamento')) && line.includes('valor')) {
         startIndex = i + 1
         console.log(`Found header at line ${i + 1}, starting data processing from line ${startIndex + 1}`)
         break
@@ -144,15 +144,17 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
       
       const columns = line.split(separator).map(col => col.trim().replace(/['"]/g, ''))
       
-      // Deve ter pelo menos 5 colunas (Data, Lançamento, Histórico, Descrição, Valor)
-      // Pode ter 6 se incluir Saldo
+      // Processar apenas as primeiras 5 colunas: Data, Lançamento, Histórico, Descrição, Valor
+      // Ignorar a coluna Saldo se existir
       if (columns.length < 5) {
         console.log(`Skipping line ${i + 1}: insufficient columns (${columns.length})`)
         continue
       }
       
-      // Mapear colunas: Data, Lançamento, Histórico, Descrição, Valor [, Saldo]
-      const [dateStr, lancamento, historico, descricao, valorStr] = columns
+      // Mapear apenas as 5 primeiras colunas: Data, Lançamento, Histórico, Descrição, Valor
+      const [dateStr, lancamento, historico, descricao, valorStr] = columns.slice(0, 5)
+      
+      console.log(`Extracted data: date=${dateStr}, lancamento=${lancamento}, historico=${historico}, descricao=${descricao}, valor=${valorStr}`)
       
       // Verificar se é linha válida (tem data)
       if (!dateStr.match(/\d{2}\/\d{2}\/\d{4}/)) {
