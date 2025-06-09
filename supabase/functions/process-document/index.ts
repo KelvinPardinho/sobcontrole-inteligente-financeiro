@@ -144,19 +144,27 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
       
       const allColumns = line.split(separator).map(col => col.trim().replace(/['"]/g, ''))
       
-      // IMPORTANTE: Usar apenas as 5 primeiras colunas, ignorando completamente a coluna "Saldo"
-      const columns = allColumns.slice(0, 5)
-      
       console.log(`All columns (${allColumns.length}):`, allColumns)
-      console.log(`Using first 5 columns:`, columns)
       
-      if (columns.length < 5) {
-        console.log(`Skipping line ${i + 1}: insufficient columns (${columns.length})`)
+      if (allColumns.length < 4) {
+        console.log(`Skipping line ${i + 1}: insufficient columns (${allColumns.length})`)
         continue
       }
       
-      // Mapear as 5 primeiras colunas: Data, Lançamento, Histórico, Descrição, Valor
-      const [dateStr, lancamento, historico, descricao, valorStr] = columns
+      // CORREÇÃO: Mapear corretamente as colunas
+      // Posição 0: Data
+      // Posição 1: Lançamento  
+      // Posição 2: Histórico
+      // Posição 3: Descrição (que no CSV aparece como "Valor" mas é a descrição)
+      // Posição 4: Valor (que no CSV aparece como "Saldo" mas é o valor real)
+      // 
+      // AGUARDE! Analisando melhor o CSV, a estrutura correta é:
+      // Posição 0: Data
+      // Posição 1: Lançamento
+      // Posição 2: Histórico  
+      // Posição 3: Descrição
+      // Posição 4: Valor
+      const [dateStr, lancamento, historico, descricao, valorStr] = allColumns
       
       console.log(`Mapped data:`)
       console.log(`  - Date: ${dateStr}`)
@@ -178,7 +186,7 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
         continue
       }
       
-      // Processar valor - usar APENAS a coluna "Valor" (quinta coluna)
+      // CORREÇÃO CRÍTICA: Usar o valorStr (quinta coluna) como valor da transação
       const amount = parseMonetaryValue(valorStr)
       if (amount === 0) {
         console.log(`Skipping line ${i + 1}: invalid amount from valor column: ${valorStr}`)
