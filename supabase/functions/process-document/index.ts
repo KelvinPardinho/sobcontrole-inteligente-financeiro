@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -151,19 +150,14 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
         continue
       }
       
-      // CORREÇÃO: Mapear corretamente as colunas
+      // CORREÇÃO FINAL: Mapear corretamente as colunas baseado na evidência
+      // O CSV tem 6 colunas: Data, Lançamento, Histórico, Descrição, Valor, Saldo
       // Posição 0: Data
       // Posição 1: Lançamento  
       // Posição 2: Histórico
-      // Posição 3: Descrição (que no CSV aparece como "Valor" mas é a descrição)
-      // Posição 4: Valor (que no CSV aparece como "Saldo" mas é o valor real)
-      // 
-      // AGUARDE! Analisando melhor o CSV, a estrutura correta é:
-      // Posição 0: Data
-      // Posição 1: Lançamento
-      // Posição 2: Histórico  
       // Posição 3: Descrição
-      // Posição 4: Valor
+      // Posição 4: Valor (ESTA é a coluna que devemos usar para amount!)
+      // Posição 5: Saldo (ignorar)
       const [dateStr, lancamento, historico, descricao, valorStr] = allColumns
       
       console.log(`Mapped data:`)
@@ -186,7 +180,7 @@ async function processCSVDocument(file: File): Promise<TransactionData[]> {
         continue
       }
       
-      // CORREÇÃO CRÍTICA: Usar o valorStr (quinta coluna) como valor da transação
+      // CORREÇÃO CRÍTICA: Usar valorStr (quarta coluna, índice 4) como valor da transação
       const amount = parseMonetaryValue(valorStr)
       if (amount === 0) {
         console.log(`Skipping line ${i + 1}: invalid amount from valor column: ${valorStr}`)
